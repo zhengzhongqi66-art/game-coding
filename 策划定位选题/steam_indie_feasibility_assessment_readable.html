@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Steam 独立游戏方向与技术选型可行性评估</title>
+  <style>
+    :root {
+      --paper: rgba(255,255,255,.82);
+      --paper-strong: #ffffff;
+      --ink: #102330;
+      --muted: #586c79;
+      --line: rgba(16,35,48,.12);
+      --brand: #0f5d79;
+      --accent: #b88a53;
+      --shadow: 0 24px 60px rgba(20,49,66,.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(184,138,83,.12), transparent 28%),
+        radial-gradient(circle at right 10% top 15%, rgba(15,93,121,.12), transparent 24%),
+        linear-gradient(180deg, #f4f7fa 0%, #eef3f7 48%, #e9eef3 100%);
+      font: 16px/1.85 "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei UI", sans-serif;
+    }
+    .page {
+      width: min(1320px, calc(100vw - 40px));
+      margin: 28px auto 56px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 28px;
+      align-items: start;
+    }
+    .main { min-width: 0; }
+    .hero {
+      padding: 30px 34px;
+      border-radius: var(--radius-xl);
+      color: #eff7fa;
+      background:
+        linear-gradient(135deg, rgba(10,27,41,.96), rgba(16,63,84,.92)),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -28% auto;
+      width: 380px;
+      height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.16), transparent 62%);
+      z-index: -1;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 20px;
+      align-items: center;
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: rgba(239,247,250,.68);
+    }
+    h1, h2, h3, h4 {
+      margin: 0;
+      font-family: "Source Han Serif SC", "Noto Serif CJK SC", "STSong", serif;
+      line-height: 1.3;
+    }
+    h1 {
+      font-size: clamp(28px, 3vw, 42px);
+      max-width: none;
+      line-height: 1.22;
+      white-space: normal;
+    }
+    h1 span { display: inline-block; }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .hero-meta span {
+      padding: 6px 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      font-size: 12px;
+    }
+    .hero-panel {
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+    .stat {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      backdrop-filter: blur(10px);
+      min-height: 78px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .stat span {
+      color: rgba(239,247,250,.74);
+      font-size: 12px;
+    }
+    .content-section {
+      margin-top: 24px;
+      padding: 32px;
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      border: 1px solid rgba(255,255,255,.65);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .section-head {
+      margin-bottom: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-kicker {
+      display: inline-block;
+      margin-bottom: 10px;
+      font-size: 12px;
+      letter-spacing: .14em;
+      color: var(--brand);
+    }
+    h2 { font-size: clamp(28px, 2.7vw, 36px); color: #102330; }
+    h3 { margin-top: 28px; margin-bottom: 12px; font-size: 23px; color: #17384c; }
+    h4 { margin-top: 20px; margin-bottom: 8px; font-size: 18px; color: #20495f; }
+    p { margin: 0 0 14px; color: #203643; }
+    .voiceover {
+      margin: 18px 0 20px;
+      padding: 20px 22px;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 18px 18px 0;
+      background: linear-gradient(180deg, rgba(184,138,83,.08), rgba(255,255,255,.72));
+      color: #2f3f48;
+    }
+    .voiceover p {
+      margin: 0;
+      font-family: "Source Han Serif SC", "Noto Serif CJK SC", serif;
+      font-size: 17px;
+      line-height: 1.95;
+    }
+    .bullet-list {
+      margin: 10px 0 18px;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .bullet-list li {
+      position: relative;
+      padding: 14px 16px 14px 42px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(15,93,121,.05), rgba(255,255,255,.68));
+      border: 1px solid rgba(15,93,121,.09);
+    }
+    .bullet-list li::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 21px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--brand);
+      box-shadow: 0 0 0 5px rgba(15,93,121,.12);
+    }
+    .table-card {
+      margin: 16px 0 22px;
+      padding: 10px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,.82), rgba(235,241,246,.86));
+      border: 1px solid rgba(16,35,48,.08);
+    }
+    .table-scroll {
+      overflow: auto;
+      border-radius: 14px;
+      background: var(--paper-strong);
+    }
+    table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(16,35,48,.08);
+      border-right: 1px solid rgba(16,35,48,.06);
+      vertical-align: top;
+      text-align: left;
+    }
+    th:last-child, td:last-child { border-right: none; }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #17384c;
+      color: #eff7fa;
+      font-weight: 600;
+      z-index: 1;
+    }
+    tbody tr:nth-child(even) td { background: rgba(239,244,247,.58); }
+    code {
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(16,35,48,.08);
+      font-size: .92em;
+    }
+    .sidebar {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      padding: 20px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.7);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .sidebar h2 { margin-bottom: 14px; font-size: 20px; }
+    .toc { display: grid; gap: 8px; }
+    .toc a {
+      text-decoration: none;
+      color: #244354;
+      border-radius: 12px;
+      transition: .18s ease;
+    }
+    .toc-main {
+      padding: 10px 12px;
+      background: rgba(15,93,121,.06);
+      font-weight: 600;
+    }
+    .toc-sub {
+      padding: 6px 10px 6px 22px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .toc a:hover { color: var(--brand); background: rgba(15,93,121,.1); }
+    .sidebar-note {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    @media (max-width: 1180px) {
+      .page {
+        width: min(100vw - 28px, 100%);
+        grid-template-columns: minmax(0, 1fr) 272px;
+        gap: 18px;
+      }
+      .hero { padding: 24px 26px; }
+      .hero-grid { grid-template-columns: minmax(0, 1fr) 192px; }
+      h1 { font-size: clamp(24px, 2.9vw, 36px); }
+      .content-section { padding: 24px; }
+    }
+    @media (max-width: 980px) {
+      .page {
+        grid-template-columns: 1fr;
+        width: min(100vw - 20px, 100%);
+        gap: 14px;
+      }
+      .sidebar {
+        position: static;
+        order: 2;
+      }
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .hero-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stat { min-height: 0; }
+    }
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 20px, 100%);
+        margin: 10px auto 28px;
+        gap: 14px;
+      }
+      .hero, .content-section, .sidebar {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      .hero { padding: 18px 16px; }
+      .eyebrow {
+        margin-bottom: 8px;
+        font-size: 11px;
+        letter-spacing: .14em;
+      }
+      h1 {
+        font-size: clamp(22px, 7vw, 30px);
+        line-height: 1.18;
+      }
+      h1 span { display: block; }
+      .hero-panel { grid-template-columns: 1fr; }
+      .hero-meta {
+        margin-top: 14px;
+        gap: 6px;
+      }
+      .hero-meta span {
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+      h2 { font-size: 24px; }
+      h3 { font-size: 18px; }
+      .voiceover p {
+        font-size: 15px;
+        line-height: 1.82;
+      }
+      .bullet-list li {
+        padding: 12px 14px 12px 36px;
+      }
+      .bullet-list li::before {
+        left: 14px;
+        top: 18px;
+      }
+      .table-card {
+        margin: 14px 0 18px;
+        padding: 8px;
+      }
+      table {
+        min-width: 640px;
+        font-size: 13px;
+      }
+      th, td { padding: 10px 12px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; display: block; }
+      .sidebar { display: none; }
+      .hero, .content-section {
+        box-shadow: none;
+        background: #fff;
+        border: 1px solid #d9e1e8;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <main class="main">
+      <header class="hero">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">Readable Edition</p>
+            <h1><span>Steam 独立游戏方向与技术选型</span><br><span>可行性评估</span></h1>
+            <div class="hero-meta">
+              <span>Markdown to HTML</span>
+              <span>阅读版</span>
+              <span>可打印为 PDF</span>
+            </div>
+          </div>
+          <aside class="hero-panel">
+            <div class="stat">
+              <strong>32</strong>
+              <span>主章节</span>
+            </div>
+            <div class="stat">
+              <strong>-</strong>
+              <span>表格单元镜头数</span>
+            </div>
+            <div class="stat">
+              <strong>HTML</strong>
+              <span>响应式阅读版</span>
+            </div>
+          </aside>
+        </div>
+      </header>
+      <section class="content-section" id="1-分析对象-边界与目标">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>1. 分析对象、边界与目标</h2></div>
+<h3 id="分析对象">分析对象</h3>
+<ul class="bullet-list"><li>你：资深产品经理，岗位本质偏品牌总监；优势在产品敏感度、市场判断、叙事包装、概念提炼、用户沟通，以及相对熟练的 <code>vibecoding</code>、工作流/agent/积分扣费系统等数字产品搭建能力。</li><li>你朋友：游戏公司美术背景，熟悉 Unity，但当前主观倾向 <code>Godot</code>，理由是轻量、编译快、对小团队够用、开源。</li></ul>
+<h3 id="这次要回答的问题">这次要回答的问题</h3>
+<p>1. 以你们当前的能力结构，做 Steam 独立游戏是否有现实机会。 2. 应该优先做什么类型的游戏，而不是先陷入引擎之争。 3. 如果未来需要在 <code>Unity</code> 与 <code>Godot</code> 间选型，什么时点做决定最合理。 4. <code>vibecoding</code> 在游戏开发里能帮到哪里，边界又在哪里。</p>
+<h3 id="约束前提">约束前提</h3>
+<ul class="bullet-list"><li>目标平台优先 <code>Steam PC</code>，不是手游先行。</li><li>更看重“有趣、好玩、有梗、有传播性”，不追求复杂大系统。</li><li>系统层不要过重，必须以“能做出来”作为第一约束。</li><li>需要特别参考 Steam 上国产独立游戏的真实好评情况与中国市场偏好。</li></ul>
+</section>
+<section class="content-section" id="2-结论先行">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>2. 结论先行</h2></div>
+<h3 id="总结判断">总结判断</h3>
+<p>**你们适合做 Steam 独立游戏，但不适合一开始做“系统很多、内容很深、工程很重”的项目。**</p>
+<p>更具体地说：</p>
+<ul class="bullet-list"><li>**主线机会**：做“高概念 + 强风格 + 中轻系统 + 强反馈 + 容易传播”的单机独游，优先考虑 <code>2D / 2.5D</code>、单局体验清晰、题材有中国语境或网络传播梗点的玩法。</li><li>**补充机会**：叙事驱动、推理、轻 roguelite、轻经营、轻卡牌、轻建造、轻策略混合体，这类方向更贴合你们的组合优势。</li><li>**合作机会**：如果后续验证证明核心乐趣成立，再引入外包程序或技术合作者扩展性能、工具链和上线质量。</li><li>**不建议机会**：开放世界、大型 3D 动作、重 MMO 化数值系统、强 PvP 联机、内容量巨大的沙盒/生存/模拟经营。</li></ul>
+<h3 id="引擎结论">引擎结论</h3>
+<p>**现在不该先拍板引擎，而应该先拍板“游戏最小闭环”。**</p>
+<p>如果你今天就逼自己二选一，我的建议是：</p>
+<ul class="bullet-list"><li>**原型阶段优先 <code>Godot</code>**，更适合你们做中小体量、快速试错、2D/轻 3D、玩法验证型产品。</li><li>**只有当项目被验证为“需要更成熟的商业插件生态、团队已深度 C# 工作流化、或者明显转向更重 3D 表现/跨端诉求”时，再认真比较 Unity。**</li></ul>
+<p>换句话说，**现在做引擎决策的粒度太细，应该先做“玩法原型决策”。**</p>
+</section>
+<section class="content-section" id="3-证据基础-steam-与国产独游的现实信号">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>3. 证据基础：Steam 与国产独游的现实信号</h2></div>
+</section>
+<section class="content-section" id="3-1-steam-不是只看愿望单-更看-买了-玩了-持续花钱-停留">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>3.1 Steam 不是只看愿望单，更看“买了、玩了、持续花钱/停留”</h2></div>
+<p>Steam 官方文档明确写到，平台可见度里更重要的是 **players and purchases**；发布后会进入 <code>New Releases</code>、<code>All New Releases</code>，如果表现好还会进入 <code>New and Trending</code> 与 <code>Top Sellers</code>。同时官方也明确说明，**愿望单通常不是算法曝光的直接决定因素**，只是会在发售、EA 转正式、20% 以上打折时触发通知。[Steam Visibility 文档](https://partner.steamgames.com/doc/marketing/visibility?language=english)</p>
+<p>这对你们的意义是：</p>
+<ul class="bullet-list"><li>不能把重点放在“先攒一个很好看的愿望单数字”。</li><li>必须把重点放在“发售前就能让玩家一眼看懂、有兴趣点击，并且买了以后很快觉得值”。</li><li>也就是说，**首个项目最重要的是概念清晰度、首屏吸引力、Demo 可玩性，不是系统大而全。**</li></ul>
+</section>
+<section class="content-section" id="3-2-steam-官方支持按国家看-top-sellers-地区偏好是实打实存在的">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>3.2 Steam 官方支持按国家看 Top Sellers，地区偏好是实打实存在的</h2></div>
+<p>Steam 官方说明 Top Sellers 有 **global 和 country-specific** 两套逻辑，会根据地区兴趣差异展示不同榜单。[Top Sellers Lists](https://partner.steamgames.com/doc/store/top_sellers)</p>
+<p>这意味着：</p>
+<ul class="bullet-list"><li>中国玩家喜欢的题材，并不一定和全球完全一致。</li><li>反过来，**只做“全球最泛化”的中性产品，不一定对你们这种小团队最有利。**</li><li>更合理的做法是：先抓住中文用户和华语内容传播，再决定是否做更大范围的国际化扩展。</li></ul>
+</section>
+<section class="content-section" id="3-3-中国语境下-steam-上已经证明-强题材-强情绪-强风格-的国产独游能跑出来">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>3.3 中国语境下，Steam 上已经证明“强题材、强情绪、强风格”的国产独游能跑出来</h2></div>
+<p>以下案例都来自 Steam 商店页当前公开评价：</p>
+<ul class="bullet-list"><li>[<code>饿殍：明末千里行</code>](https://store.steampowered.com/app/2593370/The_Hungry_Lamb_Traveling_in_the_Late_Ming_Dynasty/)：截至本次检索，Steam 购买评测约 <code>48,267</code>，其中简体中文约 <code>45,665</code>，整体为“特别好评”，2024 年 4 月 22 日发售。它本质上不是靠复杂系统取胜，而是靠 **高情绪浓度、强题材辨识度、鲜明人设和传播话题性**。</li><li>[<code>暖雪</code>](https://store.steampowered.com/app/1296830/_Warm_Snow/)：Steam 商店页公开的全部语言评测约 <code>38,495</code>，英文评测约 <code>1,283</code>，整体为“特别好评”，2022 年 1 月 18 日发售。它证明 **国产题材 + 明确玩法循环 + 强动作反馈** 可以长期吃到更新、DLC 与口碑延续。</li><li>[<code>大侠立志传</code>](https://store.steampowered.com/app/1948980/%E5%A4%A7%E4%BE%A0%E7%AB%8B%E5%BF%97%E4%BC%A0%EF%BC%9A%E7%A2%A7%E8%A1%80%E4%B8%B9%E5%BF%83/)：Steam 商店页公开的全部语言评测约 <code>21,905</code>，整体为“特别好评”。它证明 **像素/中低成本外观 + 题材抓力 + 高自由度承诺** 也有市场，但它的系统密度和内容量已经明显更重。</li><li>[<code>山河旅探</code>](https://store.steampowered.com/app/1746030/Murders_on_the_Yangtze_River/)：Steam 商店页公开的全部语言评测约 <code>20,286</code>，其中 Steam 购买评测约 <code>15,144</code>，整体为“好评如潮”，2024 年 1 月 30 日发售。它说明 **国风叙事、清晰玩法框架、优秀美术气质** 依然能建立高口碑。</li><li>[<code>火山的女儿</code>](https://store.steampowered.com/app/1669980/Volcano_Princess/)：Steam 商店页公开的全部语言评测约 <code>43,441</code>，其中简体中文约 <code>37,582</code>，整体为“好评如潮”。它说明 **轻养成 + 强角色关系 + 强传播性 + 轻系统可重复体验**，是国产独游非常成立的一条路。</li></ul>
+<h3 id="这些案例共同说明了什么">这些案例共同说明了什么</h3>
+<p>1. **国产独游在 Steam 上并不要求先做大系统，先做“能被记住”的东西更重要。** 2. **题材辨识度、情绪价值、角色记忆点、梗传播能力，对中国用户尤其重要。** 3. 评价好的项目里，很多不是因为系统最复杂，而是因为：</p>
+<ul class="bullet-list"><li>首眼识别度高</li><li>题材/世界观有记忆点</li><li>体验闭环清晰</li><li>美术和叙事有态度</li><li>玩家能快速感知“这游戏想让我爽在哪里”</li></ul>
+</section>
+<section class="content-section" id="4-回到你们自身-真正匹配的能力结构">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>4. 回到你们自身：真正匹配的能力结构</h2></div>
+<h3 id="你们的组合优势">你们的组合优势</h3>
+<ul class="bullet-list"><li>你强在：发现机会、定义概念、提炼卖点、构建传播语言、判断用户反应、搭原型流程、做功能拼装与 AI 协作。</li><li>你朋友强在：美术审美、引擎熟悉度、游戏制作语境、Unity 经验，以及对小团队“什么能落地”的直觉。</li></ul>
+<h3 id="你们的组合短板">你们的组合短板</h3>
+<ul class="bullet-list"><li>还没有体现出成熟的“核心玩法程序深度”优势。</li><li>还没有体现出长期生产海量关卡/海量内容的工业化能力。</li><li>还没有体现出复杂商业化运营、联机服务端、长线数值运营的资源储备。</li></ul>
+<h3 id="因此最现实的策略">因此最现实的策略</h3>
+<p>**你们应该把第一款产品做成“概念很准，体验很短，但爽点很密”的项目。**</p>
+<p>不要把第一款作品理解成“做一款完整的大游戏”，而要理解成：</p>
+<ul class="bullet-list"><li>做出一个能在 <code>10 秒内讲明白</code></li><li>能在 <code>1 分钟内让玩家理解乐趣</code></li><li>能在 <code>10 分钟内完成一次完整闭环</code></li><li>能在商店页靠题材、美术和文案立住形象</li></ul>
+<p>的产品。</p>
+</section>
+<section class="content-section" id="5-vibecoding-的能力边界">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>5. vibecoding 的能力边界</h2></div>
+</section>
+<section class="content-section" id="5-1-vibecoding-最适合帮你们的部分">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>5.1 vibecoding 最适合帮你们的部分</h2></div>
+<ul class="bullet-list"><li>原型脚手架：UI、基础状态机、道具系统、关卡配置、文本驱动事件、任务流、商店/背包/对话等常见模块。</li><li>工具链：关卡数据编辑器、剧情配置、CSV/JSON 导入导出、测试工具、自动打包脚本、埋点和日志分析。</li><li>生产效率：快速试不同玩法变体、快速改数值、快速搭临时系统。</li><li>内容生产辅助：文案变体、成就文案、角色台词草案、事件卡池草案、版本说明、商店页文案。</li></ul>
+</section>
+<section class="content-section" id="5-2-vibecoding-不适合作为唯一依赖的部分">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>5.2 vibecoding 不适合作为唯一依赖的部分</h2></div>
+<ul class="bullet-list"><li>复杂实时动作手感</li><li>高质量敌人 AI</li><li>复杂状态同步与联机</li><li>大型 3D 场景与性能优化</li><li>动画树、碰撞、镜头、打击反馈的细腻调教</li><li>后期线上 bug 收敛与工程稳定性</li></ul>
+<h3 id="判断标准">判断标准</h3>
+<p>如果一个模块的核心价值在于：</p>
+<ul class="bullet-list"><li>“规则清楚，写出来就行”，适合 <code>vibecoding</code></li><li>“手感很细，调不好就不好玩”，不适合过度依赖 <code>vibecoding</code></li></ul>
+<p>所以你说你更看重“有趣、玩法上好玩、有梗”，这个方向本身是对的；但前提是这个“有趣”不能建立在极高动作调试成本上，而应该建立在：</p>
+<ul class="bullet-list"><li>规则反差</li><li>情境梗</li><li>反馈密度</li><li>短局循环</li><li>意外组合</li><li>用户容易复述的体验</li></ul>
+<p>上。</p>
+</section>
+<section class="content-section" id="6-技术选型-为什么现在谈引擎有点早-但-godot-仍更适合当前阶段">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>6. 技术选型：为什么现在谈引擎有点早，但 Godot 仍更适合当前阶段</h2></div>
+</section>
+<section class="content-section" id="6-1-为什么说现在先别把引擎当主问题">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>6.1 为什么说现在先别把引擎当主问题</h2></div>
+<p>你们现在最缺的不是引擎答案，而是下面这几个答案：</p>
+<p>1. 核心乐趣到底是什么。 2. 玩家一眼能不能看懂。 3. 这个玩法闭环做出来后，真的会让人想玩第二把吗。 4. 美术风格和题材是否足够“立住”。</p>
+<p>如果这四件事没验证，先选引擎往往是在优化错误问题。</p>
+</section>
+<section class="content-section" id="6-2-但如果必须给当前阶段一个建议-我偏向-godot">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>6.2 但如果必须给当前阶段一个建议，我偏向 Godot</h2></div>
+<p>理由不是“Godot 比 Unity 高级”，而是它更贴当前阶段的目标函数：</p>
+<ul class="bullet-list"><li>小团队、低成本、快速迭代</li><li>先做玩法原型，不是先做工业化大项目</li><li>轻量工具链对原型试错更友好</li><li>对 2D/中轻量项目足够</li><li>开源、心智负担低，对实验性项目更友好</li></ul>
+</section>
+<section class="content-section" id="6-3-godot-与你们的协作方式更匹配的地方">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>6.3 Godot 与你们的协作方式更匹配的地方</h2></div>
+<p>Godot 官方文档说明其官方支持 <code>GDScript</code>、<code>C#(.NET)</code> 与 <code>C++(GDExtension)</code>；同时官方一直强调 GDScript 的目标是降低复杂度、提高生产效率。[Other languages](https://docs.godotengine.org/en/stable/tutorials/scripting/other_languages.html) [Godot FAQ](https://docs.godotengine.org/en/3.1/about/faq.html)</p>
+<p>Godot 还明确提到：</p>
+<ul class="bullet-list"><li><code>GDScript</code> 之所以存在，是为了更快上手并降低复杂度。[Godot FAQ](https://docs.godotengine.org/en/3.1/about/faq.html)</li><li>在语言建议上，官方认为 <code>GDScript</code> 更适合快速写玩法逻辑，而 <code>C#</code> 更适合已有经验的开发者。[Scripting languages](https://docs.godotengine.org/en/3.4/getting_started/step_by_step/scripting_languages.html)</li></ul>
+<p>这和你们非常贴合：</p>
+<ul class="bullet-list"><li>你不需要成为高阶引擎程序员，也能参与大量逻辑与内容原型。</li><li>你朋友即使懂 Unity/C#，也不一定非得把整个项目锁死在重 C# 工作流里。</li><li>你们完全可以采用：</li><li><code>GDScript</code> 做玩法与原型</li><li>必要时 <code>C#</code> 做少量复杂工具或模块</li></ul>
+<p>的混合策略。</p>
+</section>
+<section class="content-section" id="6-4-但-godot-也不是无脑完美">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>6.4 但 Godot 也不是无脑完美</h2></div>
+<p>Godot 官方稳定版文档明确写到：</p>
+<ul class="bullet-list"><li>Godot 4 的 <code>C#</code> 项目当前 **不能导出到 Web**；</li><li>Android / iOS 虽然在 4.2 以后可用，但仍标注为 **experimental**，且有额外限制；</li><li>C# 工作流依赖外部 IDE；</li><li>某些编辑器插件和 .NET 工作流仍有“需要自己多处理”的地方。[Godot C# basics](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html)</li></ul>
+<p>这意味着：</p>
+<ul class="bullet-list"><li>如果你们未来目标明确是 <code>Steam PC</code> 单机，问题不大。</li><li>如果你们想把第一款产品顺手发 Web、小程序、手游多端，<code>Godot + C#</code> 组合就不一定是最省心的。</li><li>所以 **如果用 Godot，建议第一阶段尽量以 <code>GDScript + PC 单机</code> 为主，不要一开始就把架构做成“多端野心版”。**</li></ul>
+</section>
+<section class="content-section" id="6-5-unity-什么时候才值得重新进入候选名单">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>6.5 Unity 什么时候才值得重新进入候选名单</h2></div>
+<p>以下情况出现时，再认真评估 Unity：</p>
+<ul class="bullet-list"><li>你们已经验证成功一个原型，准备做更偏商业工业化的续作。</li><li>团队明显要扩编，且新增成员普遍更熟 Unity/C#。</li><li>项目要强依赖成熟插件生态、外包协作标准化、复杂 3D 管线。</li><li>明显需要更成熟的第三方中间件整合。</li></ul>
+<p>在那之前，**Unity 的“成熟”不一定是你们当前最关键的优势，反而可能意味着更高的项目心智负担。**</p>
+</section>
+<section class="content-section" id="7-市场方向判断-什么最适合你们">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>7. 市场方向判断：什么最适合你们</h2></div>
+</section>
+<section class="content-section" id="7-1-主线机会">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>7.1 主线机会</h2></div>
+<h3 id="方向-a-强概念的轻-roguelite-轻策略-轻卡牌混合">方向 A：强概念的轻 Roguelite / 轻策略 / 轻卡牌混合</h3>
+<p>适合原因：</p>
+<ul class="bullet-list"><li>玩法闭环容易做短</li><li>可复玩性比纯叙事更高</li><li>系统可以克制，不一定复杂</li><li>容易做“奇怪组合”“离谱事件”“梗反馈”</li><li>Steam 用户对这类结构接受度高</li></ul>
+<p>更适合你们的版本：</p>
+<ul class="bullet-list"><li>单局 10 到 25 分钟</li><li>规则不超过 3 到 5 个核心系统</li><li>每次游玩都能出现意外组合</li><li>文案与事件能承担一部分乐趣</li></ul>
+<p>例子形态：</p>
+<ul class="bullet-list"><li>“高压打工/审查/经营”题材的轻策略</li><li>“国风怪谈/职场荒诞/社会观察”题材的轻卡牌</li><li>“梗图驱动”的资源分配/路线决策玩法</li></ul>
+<h3 id="方向-b-叙事推理-事件驱动-国风题材的小体量游戏">方向 B：叙事推理 / 事件驱动 / 国风题材的小体量游戏</h3>
+<p>适合原因：</p>
+<ul class="bullet-list"><li>你在产品定义、用户情绪与包装上的优势能直接转化</li><li>你朋友的美术能力能成为商店页竞争力</li><li>国产 Steam 用户对强题材、强文本、强情绪接受度高</li><li>系统复杂度可控</li></ul>
+<p>但注意：</p>
+<ul class="bullet-list"><li>不能只是“会讲故事”，必须有可交互的乐趣点</li><li>不能变成纯视觉小说同质化</li><li>最好加入清晰互动框架，例如调查、取证、抉择、资源管理、时间推进、身份切换等</li></ul>
+<h3 id="方向-c-轻经营-强角色关系-强梗传播">方向 C：轻经营 + 强角色关系 + 强梗传播</h3>
+<p>这是《火山的女儿》式思路给你们的启发，但不应简单照抄。</p>
+<p>适合原因：</p>
+<ul class="bullet-list"><li>容易做人物记忆点</li><li>社媒传播效率高</li><li>系统可以不复杂，但反馈可以很密</li><li>适合靠美术和角色拉高点击率</li></ul>
+<p>风险在于：</p>
+<ul class="bullet-list"><li>内容生产压力会比你想象大</li><li>如果角色魅力、文本密度和数值节奏拿不住，很容易平</li></ul>
+</section>
+<section class="content-section" id="7-2-补充机会">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>7.2 补充机会</h2></div>
+<ul class="bullet-list"><li>超小体量高概念实验作：先做 30 到 60 分钟体验、用来验证题材和传播</li><li>Demo 先行项目：先把一个高辨识玩法做成可公开试玩</li><li>“中国语境 + 世界通用规则”项目：题材中国，但玩法让海外用户也能立即理解</li></ul>
+</section>
+<section class="content-section" id="7-3-不建议机会">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>7.3 不建议机会</h2></div>
+<h3 id="不建议-1-大-3d-动作">不建议 1：大 3D 动作</h3>
+<p>原因：</p>
+<ul class="bullet-list"><li>真正难点不是功能写不写得出，而是手感、动画、镜头、关卡、性能、敌人 AI 全部要一起成立</li><li><code>vibecoding</code> 在这里最容易产生“看起来有系统，玩起来不行”的假进度</li></ul>
+<h3 id="不建议-2-超深模拟经营">不建议 2：超深模拟经营</h3>
+<p>原因：</p>
+<ul class="bullet-list"><li>内容、系统、平衡、引导、UI 复杂度会一起爆炸</li><li>你们当前更擅长“定义有趣”，不是“维护一个庞大系统长期自洽”</li></ul>
+<h3 id="不建议-3-联机-pvp-服务型游戏">不建议 3：联机 PvP / 服务型游戏</h3>
+<p>原因：</p>
+<ul class="bullet-list"><li>开发难点、运维难点、作弊、安全、匹配、长线内容都过重</li><li>这和你们的起步资源完全不匹配</li></ul>
+</section>
+<section class="content-section" id="8-上线策略判断-更适合-demo-playtest-不一定适合过早-early-access">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>8. 上线策略判断：更适合 Demo / Playtest，不一定适合过早 Early Access</h2></div>
+<p>Steam 官方对 Early Access 的建议非常明确：如果你还没想清楚“玩家玩起来为什么有趣”，那就 **太早** 了；EA 不是用来给纯概念或技术样机筹资的。[Steam Early Access](https://partner.steamgames.com/doc/store/earlyaccess)</p>
+<p>同时 Steam 官方持续强调 <code>Next Fest</code>、Demo 与前期曝光对于未来发布很重要。[Upcoming Steam Events](https://partner.steamgames.com/doc/marketing/upcoming_events) [Steam Next Fest](https://partner.steamgames.com/doc/marketing/upcoming_events/nextfest/2026june?language=english)</p>
+<h3 id="因此你们更现实的路径是">因此你们更现实的路径是</h3>
+<p>1. 先做一个可玩的高概念 Demo。 2. 再做小规模封测/试玩收反馈。 3. 如果闭环成立，再考虑公开 Demo 和 Next Fest。 4. **不要在“乐趣还没坐实”时就冲 Early Access。**</p>
+</section>
+<section class="content-section" id="9-回到自身战略-该怎么做">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>9. 回到自身战略：该怎么做</h2></div>
+</section>
+<section class="content-section" id="9-1-适合你们的项目定义">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>9.1 适合你们的项目定义</h2></div>
+<p>第一款产品建议满足以下条件：</p>
+<ul class="bullet-list"><li><code>2D / 2.5D</code></li><li>单机</li><li>PC 优先</li><li>玩法规则少</li><li>单局闭环清晰</li><li>美术和题材强识别</li><li>含中文语境传播点</li><li>有 Demo 价值</li><li>3 到 6 个月内能做出可被陌生玩家评价的版本</li></ul>
+</section>
+<section class="content-section" id="9-2-推荐的产品公式">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>9.2 推荐的产品公式</h2></div>
+<p>**一句话可讲明白的概念**</p>
+<ul class="bullet-list"><li>**一眼能认出的视觉气质**</li></ul>
+<ul class="bullet-list"><li>**十分钟内能感知爽点的玩法闭环**</li></ul>
+<ul class="bullet-list"><li>**一个能引发讨论/转发的梗点或题材点**</li></ul>
+<p>= 更适合你们的 Steam 首作</p>
+</section>
+<section class="content-section" id="9-3-建议的团队分工">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>9.3 建议的团队分工</h2></div>
+<ul class="bullet-list"><li>你负责：</li><li>赛道选择</li><li>核心概念与卖点</li><li>用户研究与竞品拆解</li><li>文案、事件、角色、商店页表达</li><li>数据化测试与验证框架</li><li>用 <code>vibecoding</code> 搭辅助系统、编辑器工具、剧情/事件配置工作流</li><li>你朋友负责：</li><li>视觉风格定调</li><li>游戏手感的实际把控</li><li>场景/角色/UI 美术标准</li><li>引擎内实现质量</li><li>原型到可玩版本的技术落地</li></ul>
+</section>
+<section class="content-section" id="10-90-天验证路线图">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>10. 90 天验证路线图</h2></div>
+</section>
+<section class="content-section" id="第一阶段-2-周内">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>第一阶段：2 周内</h2></div>
+<ul class="bullet-list"><li>不做引擎大战，只做 3 个一句话概念</li><li>每个概念必须写清：</li><li>玩家扮演谁</li><li>反复在做什么</li><li>为什么有趣</li><li>有什么传播点</li><li>为什么是你们能做的</li></ul>
+</section>
+<section class="content-section" id="第二阶段-第-3-到-6-周">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>第二阶段：第 3 到 6 周</h2></div>
+<ul class="bullet-list"><li>只选 1 个概念做最小可玩原型</li><li>要求：</li><li>一个 10 分钟闭环</li><li>一个明确失败条件/结算页</li><li>至少一个“会让玩家笑一下或惊一下”的反馈点</li><li>美术先用可表达风格的低成本方案，不追完整内容量</li></ul>
+</section>
+<section class="content-section" id="第三阶段-第-7-到-10-周">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>第三阶段：第 7 到 10 周</h2></div>
+<ul class="bullet-list"><li>找 15 到 30 个目标玩家试玩</li><li>重点只问 5 件事：</li><li>第一次上手有没有看懂</li><li>哪一刻开始觉得有意思</li><li>哪一刻开始无聊</li><li>愿不愿意玩第二把</li><li>如果发到 Steam，会不会愿望单/关注</li></ul>
+</section>
+<section class="content-section" id="第四阶段-第-11-到-13-周">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>第四阶段：第 11 到 13 周</h2></div>
+<ul class="bullet-list"><li>根据试玩反馈只做一件事：强化乐趣核心</li><li>如果需要大改世界观、美术方向或主循环，立刻改</li><li>这时再决定：</li><li>是否长期继续用 <code>Godot</code></li><li>是否做公开 Demo</li><li>是否值得立项做正式产品</li></ul>
+</section>
+<section class="content-section" id="11-最终判断">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>11. 最终判断</h2></div>
+<h3 id="我给你们的结论是">我给你们的结论是</h3>
+<p>**值得做，但必须做“小而尖”，而不是“小而全”。**</p>
+<p>你们真正的胜率不在于：</p>
+<ul class="bullet-list"><li>先证明自己也能做一个复杂系统</li><li>先选一个“最正确”的引擎</li></ul>
+<p>而在于：</p>
+<ul class="bullet-list"><li>找到一个中国玩家能秒懂、Steam 用户愿意点开、你们又真能做完的高概念</li><li>用轻系统把“有趣”和“有梗”做密</li><li>用美术气质和文案包装把识别度拉高</li></ul>
+<h3 id="一句话建议">一句话建议</h3>
+<p>**先做玩法原型，再定引擎；先做可玩闭环，再谈大项目；首作优先 <code>Godot + 2D/轻3D + 中轻系统 + 强概念传播</code>。**</p>
+</section>
+<section class="content-section" id="12-参考来源">
+<div class="section-head"><span class="section-kicker">SECTION</span><h2>12. 参考来源</h2></div>
+<ul class="bullet-list"><li>Steamworks: [Visibility on Steam](https://partner.steamgames.com/doc/marketing/visibility?language=english)</li><li>Steamworks: [Top Sellers Lists](https://partner.steamgames.com/doc/store/top_sellers)</li><li>Steamworks: [Early Access](https://partner.steamgames.com/doc/store/earlyaccess)</li><li>Steamworks: [Upcoming Steam Events](https://partner.steamgames.com/doc/marketing/upcoming_events)</li><li>Steamworks: [Steam Next Fest: June 2026](https://partner.steamgames.com/doc/marketing/upcoming_events/nextfest/2026june?language=english)</li><li>Godot Docs: [Other languages](https://docs.godotengine.org/en/stable/tutorials/scripting/other_languages.html)</li><li>Godot Docs: [C# basics](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html)</li><li>Godot Docs: [Scripting languages](https://docs.godotengine.org/en/3.4/getting_started/step_by_step/scripting_languages.html)</li><li>Godot Docs: [FAQ - Why use GDScript](https://docs.godotengine.org/en/3.1/about/faq.html)</li><li>Steam Store: [The Hungry Lamb](https://store.steampowered.com/app/2593370/The_Hungry_Lamb_Traveling_in_the_Late_Ming_Dynasty/)</li><li>Steam Store: [Warm Snow](https://store.steampowered.com/app/1296830/_Warm_Snow/)</li><li>Steam Store: [Hero&#x27;s Adventure](https://store.steampowered.com/app/1948980/%E5%A4%A7%E4%BE%A0%E7%AB%8B%E5%BF%97%E4%BC%A0%EF%BC%9A%E7%A2%A7%E8%A1%80%E4%B8%B9%E5%BF%83/)</li><li>Steam Store: [Murders on the Yangtze River](https://store.steampowered.com/app/1746030/Murders_on_the_Yangtze_River/)</li><li>Steam Store: [Volcano Princess](https://store.steampowered.com/app/1669980/Volcano_Princess/)</li></ul>
+</section>
+    </main>
+    <aside class="sidebar">
+      <h2>目录</h2>
+      <nav class="toc">
+        <a class="toc-main" href="#1-分析对象-边界与目标">1. 分析对象、边界与目标</a><a class="toc-sub" href="#分析对象">分析对象</a><a class="toc-sub" href="#这次要回答的问题">这次要回答的问题</a><a class="toc-sub" href="#约束前提">约束前提</a><a class="toc-main" href="#2-结论先行">2. 结论先行</a><a class="toc-sub" href="#总结判断">总结判断</a><a class="toc-sub" href="#引擎结论">引擎结论</a><a class="toc-main" href="#3-证据基础-steam-与国产独游的现实信号">3. 证据基础：Steam 与国产独游的现实信号</a><a class="toc-main" href="#3-1-steam-不是只看愿望单-更看-买了-玩了-持续花钱-停留">3.1 Steam 不是只看愿望单，更看“买了、玩了、持续花钱/停留”</a><a class="toc-main" href="#3-2-steam-官方支持按国家看-top-sellers-地区偏好是实打实存在的">3.2 Steam 官方支持按国家看 Top Sellers，地区偏好是实打实存在的</a><a class="toc-main" href="#3-3-中国语境下-steam-上已经证明-强题材-强情绪-强风格-的国产独游能跑出来">3.3 中国语境下，Steam 上已经证明“强题材、强情绪、强风格”的国产独游能跑出来</a><a class="toc-sub" href="#这些案例共同说明了什么">这些案例共同说明了什么</a><a class="toc-main" href="#4-回到你们自身-真正匹配的能力结构">4. 回到你们自身：真正匹配的能力结构</a><a class="toc-sub" href="#你们的组合优势">你们的组合优势</a><a class="toc-sub" href="#你们的组合短板">你们的组合短板</a><a class="toc-sub" href="#因此最现实的策略">因此最现实的策略</a><a class="toc-main" href="#5-vibecoding-的能力边界">5. vibecoding 的能力边界</a><a class="toc-main" href="#5-1-vibecoding-最适合帮你们的部分">5.1 vibecoding 最适合帮你们的部分</a><a class="toc-main" href="#5-2-vibecoding-不适合作为唯一依赖的部分">5.2 vibecoding 不适合作为唯一依赖的部分</a><a class="toc-sub" href="#判断标准">判断标准</a><a class="toc-main" href="#6-技术选型-为什么现在谈引擎有点早-但-godot-仍更适合当前阶段">6. 技术选型：为什么现在谈引擎有点早，但 Godot 仍更适合当前阶段</a><a class="toc-main" href="#6-1-为什么说现在先别把引擎当主问题">6.1 为什么说现在先别把引擎当主问题</a><a class="toc-main" href="#6-2-但如果必须给当前阶段一个建议-我偏向-godot">6.2 但如果必须给当前阶段一个建议，我偏向 Godot</a><a class="toc-main" href="#6-3-godot-与你们的协作方式更匹配的地方">6.3 Godot 与你们的协作方式更匹配的地方</a><a class="toc-main" href="#6-4-但-godot-也不是无脑完美">6.4 但 Godot 也不是无脑完美</a><a class="toc-main" href="#6-5-unity-什么时候才值得重新进入候选名单">6.5 Unity 什么时候才值得重新进入候选名单</a><a class="toc-main" href="#7-市场方向判断-什么最适合你们">7. 市场方向判断：什么最适合你们</a><a class="toc-main" href="#7-1-主线机会">7.1 主线机会</a><a class="toc-sub" href="#方向-a-强概念的轻-roguelite-轻策略-轻卡牌混合">方向 A：强概念的轻 Roguelite / 轻策略 / 轻卡牌混合</a><a class="toc-sub" href="#方向-b-叙事推理-事件驱动-国风题材的小体量游戏">方向 B：叙事推理 / 事件驱动 / 国风题材的小体量游戏</a><a class="toc-sub" href="#方向-c-轻经营-强角色关系-强梗传播">方向 C：轻经营 + 强角色关系 + 强梗传播</a><a class="toc-main" href="#7-2-补充机会">7.2 补充机会</a><a class="toc-main" href="#7-3-不建议机会">7.3 不建议机会</a><a class="toc-sub" href="#不建议-1-大-3d-动作">不建议 1：大 3D 动作</a><a class="toc-sub" href="#不建议-2-超深模拟经营">不建议 2：超深模拟经营</a><a class="toc-sub" href="#不建议-3-联机-pvp-服务型游戏">不建议 3：联机 PvP / 服务型游戏</a><a class="toc-main" href="#8-上线策略判断-更适合-demo-playtest-不一定适合过早-early-access">8. 上线策略判断：更适合 Demo / Playtest，不一定适合过早 Early Access</a><a class="toc-sub" href="#因此你们更现实的路径是">因此你们更现实的路径是</a><a class="toc-main" href="#9-回到自身战略-该怎么做">9. 回到自身战略：该怎么做</a><a class="toc-main" href="#9-1-适合你们的项目定义">9.1 适合你们的项目定义</a><a class="toc-main" href="#9-2-推荐的产品公式">9.2 推荐的产品公式</a><a class="toc-main" href="#9-3-建议的团队分工">9.3 建议的团队分工</a><a class="toc-main" href="#10-90-天验证路线图">10. 90 天验证路线图</a><a class="toc-main" href="#第一阶段-2-周内">第一阶段：2 周内</a><a class="toc-main" href="#第二阶段-第-3-到-6-周">第二阶段：第 3 到 6 周</a><a class="toc-main" href="#第三阶段-第-7-到-10-周">第三阶段：第 7 到 10 周</a><a class="toc-main" href="#第四阶段-第-11-到-13-周">第四阶段：第 11 到 13 周</a><a class="toc-main" href="#11-最终判断">11. 最终判断</a><a class="toc-sub" href="#我给你们的结论是">我给你们的结论是</a><a class="toc-sub" href="#一句话建议">一句话建议</a><a class="toc-main" href="#12-参考来源">12. 参考来源</a>
+      </nav>
+      <div class="sidebar-note">
+        建议直接在浏览器里打开。<br>
+        如需发给他人，可直接打印成 PDF。
+      </div>
+    </aside>
+  </div>
+  <script>
+    (() => {
+      const sidebar = document.querySelector('.sidebar');
+      if (!sidebar) return;
+      let lastY = window.scrollY;
+      const updateSidebar = () => {
+        if (window.innerWidth <= 980) {
+          sidebar.style.top = '';
+          return;
+        }
+        const rect = sidebar.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const margin = 24;
+        const overflow = rect.height - (viewportHeight - margin * 2);
+        if (overflow <= 0) {
+          sidebar.style.top = margin + 'px';
+          return;
+        }
+        const scrollingDown = window.scrollY > lastY;
+        lastY = window.scrollY;
+        const currentTop = parseFloat(sidebar.style.top || margin);
+        const minTop = viewportHeight - rect.height - margin;
+        const maxTop = margin;
+        let nextTop = currentTop;
+        if (scrollingDown && rect.bottom > viewportHeight - margin) {
+          nextTop = Math.max(minTop, currentTop - (rect.bottom - (viewportHeight - margin)));
+        } else if (!scrollingDown && rect.top < margin) {
+          nextTop = Math.min(maxTop, currentTop + (margin - rect.top));
+        }
+        sidebar.style.top = nextTop + 'px';
+      };
+      updateSidebar();
+      window.addEventListener('scroll', updateSidebar, { passive: true });
+      window.addEventListener('resize', updateSidebar);
+    })();
+  </script>
+</body>
+</html>
