@@ -58,6 +58,7 @@ Mitigation:
 - use clear effect timing
 - highlight activation sources
 - keep first prototype visuals simple
+- require post-battle cause summaries before adding heavy visual polish
 
 ### Risk C: Theme ambition outruns production capacity
 
@@ -74,6 +75,7 @@ Mitigation:
 - define item schema early
 - standardize triggers and timing names
 - validate data automatically where possible
+- track item strategic role in addition to raw content count
 
 ### Risk E: The hub becomes bloated
 
@@ -82,6 +84,15 @@ Mitigation:
 - keep the hub functional
 - avoid adding large navigation or social layers
 - use it as a preparation and reward space first
+
+### Risk F: The game feels theoretically interesting but not replayable
+
+Mitigation:
+
+- track whether players change layouts voluntarily
+- test whether rewards create real branching strategy
+- review whether failures suggest a clear next adjustment
+- avoid adding content that does not improve decision density
 
 ## 3. Open questions to revisit after prototype
 

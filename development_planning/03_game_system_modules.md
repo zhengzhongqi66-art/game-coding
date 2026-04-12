@@ -184,6 +184,14 @@ Must answer:
 - what broke
 - what triggered first
 
+Minimum first-playable outputs:
+
+- active item highlighting
+- energy route visualization
+- trigger order event feed
+- failure reason summary after combat
+- quick compare between current layout and previous layout
+
 Without this, the game will feel random.
 
 ### B. Tutorial and Onboarding Layer
@@ -205,6 +213,8 @@ Need internal tools for:
 - encounter win rate
 - item usage rate
 - failed activation reasons
+- post-loss cause tagging
+- layout change frequency tracking
 
 ## 4. Recommended first-world module package
 

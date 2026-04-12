@@ -1,0 +1,154 @@
+{
+  "schema_version": "v1",
+  "source_documents": [
+    "development_planning/10_profession_and_skill_unlocks.md",
+    "development_planning/11_first_version_profession_roster.md",
+    "development_planning/12_first_profession_passives_and_unlock_branch.md"
+  ],
+  "professions": [
+    {
+      "id": "cultivator",
+      "name": "Cultivator",
+      "container_name": "Spatial Ring",
+      "theme_tags": ["xianxia", "formation", "energy", "direction"],
+      "profession_affinity_tag": "cultivator_affinity",
+      "world_bias_tags": ["xianxia_origin"],
+      "first_unlock": {
+        "resource_type": "dna",
+        "resource_cost": 1,
+        "effects": [
+          "unlock_profession_identity",
+          "unlock_container_variant",
+          "unlock_battle_space_variant",
+          "unlock_passive_spiritual_alignment"
+        ]
+      },
+      "core_passive": {
+        "id": "spiritual_alignment",
+        "name": "Spiritual Alignment",
+        "description": "Directional or energy-linked items gain extra effectiveness when their setup is cleanly completed.",
+        "required_states": ["clean_alignment", "valid_energy_path"],
+        "effect_summary": "Rewards precise arrangement and complete support structure."
+      },
+      "unlock_branch": [
+        {
+          "id": "talisman_harmony",
+          "name": "Talisman Harmony",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Talisman support items provide more value to valid adjacent targets."
+        },
+        {
+          "id": "spirit_stone_conduction",
+          "name": "Spirit Stone Conduction",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Spirit stone energy providers lose less efficiency across linked paths."
+        },
+        {
+          "id": "weapon_facing_insight",
+          "name": "Weapon Facing Insight",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Correctly oriented weapon items gain clearer payoff."
+        }
+      ]
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "container_name": "Arcane Grimoire",
+      "theme_tags": ["arcane", "spell", "charge", "burst"],
+      "profession_affinity_tag": "mage_affinity",
+      "world_bias_tags": ["arcane_origin"],
+      "first_unlock": {
+        "resource_type": "dna",
+        "resource_cost": 1,
+        "effects": [
+          "unlock_profession_identity",
+          "unlock_container_variant",
+          "unlock_battle_space_variant",
+          "unlock_passive_charged_casting"
+        ]
+      },
+      "core_passive": {
+        "id": "charged_casting",
+        "name": "Charged Casting",
+        "description": "Spell-form items gain extra payoff when triggered after proper magical setup.",
+        "required_states": ["charged_state", "spell_sequence_ready"],
+        "effect_summary": "Rewards magical sequencing and prepared bursts."
+      },
+      "unlock_branch": [
+        {
+          "id": "quick_sigil",
+          "name": "Quick Sigil",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "The first magical support item each battle becomes active more reliably."
+        },
+        {
+          "id": "stored_charge",
+          "name": "Stored Charge",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Charged spell items retain more prepared value."
+        },
+        {
+          "id": "arcane_echo",
+          "name": "Arcane Echo",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "One spell trigger each battle gains a lighter repeat effect under valid conditions."
+        }
+      ]
+    },
+    {
+      "id": "artificial_intelligence",
+      "name": "Artificial Intelligence",
+      "container_name": "Data Core",
+      "theme_tags": ["synthetic", "logic", "automation", "processing"],
+      "profession_affinity_tag": "ai_affinity",
+      "world_bias_tags": ["synthetic_origin"],
+      "first_unlock": {
+        "resource_type": "dna",
+        "resource_cost": 1,
+        "effects": [
+          "unlock_profession_identity",
+          "unlock_container_variant",
+          "unlock_battle_space_variant",
+          "unlock_passive_predictive_routine"
+        ]
+      },
+      "core_passive": {
+        "id": "predictive_routine",
+        "name": "Predictive Routine",
+        "description": "Structured linked systems perform more consistently when all activation dependencies are met.",
+        "required_states": ["full_logic_chain", "stable_cycle"],
+        "effect_summary": "Rewards complete routing and clean machine logic."
+      },
+      "unlock_branch": [
+        {
+          "id": "efficient_processing",
+          "name": "Efficient Processing",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Linked support or logic items consume less operational efficiency."
+        },
+        {
+          "id": "redundant_safeguard",
+          "name": "Redundant Safeguard",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Once per battle, one failed structured activation can be partially recovered."
+        },
+        {
+          "id": "optimization_cycle",
+          "name": "Optimization Cycle",
+          "resource_type": "dna",
+          "resource_cost": 1,
+          "description": "Stable linked builds gain a small end-of-cycle efficiency bonus."
+        }
+      ]
+    }
+  ]
+}

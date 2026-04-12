@@ -42,6 +42,7 @@ Deliverables:
 Success check:
 
 - moving one tile frequently changes projected value
+- testers voluntarily rearrange for improvement instead of stopping at first fit
 
 ### Milestone 2: Combat validation prototype
 
@@ -61,6 +62,7 @@ Deliverables:
 Success check:
 
 - testers can explain why they won or lost
+- testers can identify the main trigger chain or failed support link
 
 ### Milestone 3: Full run loop prototype
 
@@ -80,6 +82,7 @@ Deliverables:
 Success check:
 
 - a complete short run feels coherent
+- reward choices regularly cause meaningful rebuild decisions
 
 ### Milestone 4: First-world vertical slice
 
@@ -99,6 +102,7 @@ Deliverables:
 Success check:
 
 - the game has a clear screenshot and trailer hook
+- the world rule measurably changes how players construct builds
 
 ### Milestone 5: Demo candidate
 
@@ -118,6 +122,7 @@ Deliverables:
 Success check:
 
 - outside testers understand the core loop in one session
+- outside testers can explain at least one loss and one next-run adjustment
 
 ## 3. Suggested timeline for a small team
 

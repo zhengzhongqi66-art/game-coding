@@ -1,0 +1,248 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_screen.gd" id="1"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.11, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="RootVBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleBlock" type="VBoxContainer" parent="MarginContainer/RootVBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="MarginContainer/RootVBox/Header/TitleBlock"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "双空间构筑原型"
+
+[node name="Summary" type="Label" parent="MarginContainer/RootVBox/Header/TitleBlock"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "正在加载数据..."
+
+[node name="ActionHint" type="Label" parent="MarginContainer/RootVBox/Header/TitleBlock"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+autowrap_mode = 2
+text = "点击道具查看详情，按住左键拖拽道具，可在战斗空间和储物空间之间调整。"
+
+[node name="ProfessionPanel" type="PanelContainer" parent="MarginContainer/RootVBox/Header"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+
+[node name="ProfessionMargin" type="MarginContainer" parent="MarginContainer/RootVBox/Header/ProfessionPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="ProfessionVBox" type="VBoxContainer" parent="MarginContainer/RootVBox/Header/ProfessionPanel/ProfessionMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProfessionLabel" type="Label" parent="MarginContainer/RootVBox/Header/ProfessionPanel/ProfessionMargin/ProfessionVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "职业切换"
+
+[node name="ProfessionSelector" type="OptionButton" parent="MarginContainer/RootVBox/Header/ProfessionPanel/ProfessionMargin/ProfessionVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="VariantLabel" type="Label" parent="MarginContainer/RootVBox/Header/ProfessionPanel/ProfessionMargin/ProfessionVBox"]
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+autowrap_mode = 2
+text = "当前职业说明"
+
+[node name="Content" type="HSplitContainer" parent="MarginContainer/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 920
+
+[node name="BoardSide" type="VBoxContainer" parent="MarginContainer/RootVBox/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="BattlePanel" type="PanelContainer" parent="MarginContainer/RootVBox/Content/BoardSide"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BattleMargin" type="MarginContainer" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="BattleVBox" type="VBoxContainer" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel/BattleMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BattleTitle" type="Label" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel/BattleMargin/BattleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "战斗空间"
+
+[node name="BattleInfo" type="Label" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel/BattleMargin/BattleVBox"]
+layout_mode = 2
+text = "6 x 5（共 30 格）"
+
+[node name="BattleBoard" type="Control" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel/BattleMargin/BattleVBox"]
+custom_minimum_size = Vector2(560, 470)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BattleCells" type="Control" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel/BattleMargin/BattleVBox/BattleBoard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BattleItems" type="Control" parent="MarginContainer/RootVBox/Content/BoardSide/BattlePanel/BattleMargin/BattleVBox/BattleBoard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StoragePanel" type="PanelContainer" parent="MarginContainer/RootVBox/Content/BoardSide"]
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+
+[node name="StorageMargin" type="MarginContainer" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="StorageVBox" type="VBoxContainer" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel/StorageMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StorageTitle" type="Label" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel/StorageMargin/StorageVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "储物空间"
+
+[node name="StorageInfo" type="Label" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel/StorageMargin/StorageVBox"]
+layout_mode = 2
+text = "4 x 4（共 16 格）"
+
+[node name="StorageBoard" type="Control" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel/StorageMargin/StorageVBox"]
+custom_minimum_size = Vector2(380, 380)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StorageCells" type="Control" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel/StorageMargin/StorageVBox/StorageBoard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StorageItems" type="Control" parent="MarginContainer/RootVBox/Content/BoardSide/StoragePanel/StorageMargin/StorageVBox/StorageBoard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InfoSide" type="VBoxContainer" parent="MarginContainer/RootVBox/Content"]
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="RewardPanel" type="PanelContainer" parent="MarginContainer/RootVBox/Content/InfoSide"]
+layout_mode = 2
+
+[node name="RewardMargin" type="MarginContainer" parent="MarginContainer/RootVBox/Content/InfoSide/RewardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="RewardVBox" type="VBoxContainer" parent="MarginContainer/RootVBox/Content/InfoSide/RewardPanel/RewardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RewardTitle" type="Label" parent="MarginContainer/RootVBox/Content/InfoSide/RewardPanel/RewardMargin/RewardVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "当前阶段与奖励"
+
+[node name="RewardDetails" type="RichTextLabel" parent="MarginContainer/RootVBox/Content/InfoSide/RewardPanel/RewardMargin/RewardVBox"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+bbcode_enabled = true
+
+[node name="ItemPanel" type="PanelContainer" parent="MarginContainer/RootVBox/Content/InfoSide"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemMargin" type="MarginContainer" parent="MarginContainer/RootVBox/Content/InfoSide/ItemPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="ItemVBox" type="VBoxContainer" parent="MarginContainer/RootVBox/Content/InfoSide/ItemPanel/ItemMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ItemTitle" type="Label" parent="MarginContainer/RootVBox/Content/InfoSide/ItemPanel/ItemMargin/ItemVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "道具说明与建议"
+
+[node name="ItemDetails" type="RichTextLabel" parent="MarginContainer/RootVBox/Content/InfoSide/ItemPanel/ItemMargin/ItemVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
