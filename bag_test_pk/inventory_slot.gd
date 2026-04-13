@@ -141,12 +141,18 @@ func _get_drag_data(at_position: Vector2):
 	if not has_item():
 		return null
 
-	# 创建预览
+	# 创建预览 - 保持与原物品相同的显示尺寸
+	var slot_size = 46
+	var gap = 3
+	var w = item_data.grid_size.x * slot_size + (item_data.grid_size.x - 1) * gap
+	var h = item_data.grid_size.y * slot_size + (item_data.grid_size.y - 1) * gap
+
 	var preview = Control.new()
 	var preview_icon = TextureRect.new()
 	preview_icon.texture = item_data.icon
-	preview_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	preview_icon.custom_minimum_size = Vector2(50 * item_data.grid_size.x, 50 * item_data.grid_size.y)
+	preview_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview_icon.stretch_mode = TextureRect.STRETCH_SCALE
+	preview_icon.size = Vector2(w, h)
 	preview.add_child(preview_icon)
 	preview.position = at_position * -1
 

@@ -15,7 +15,7 @@ var tooltip_desc: Label
 
 var dragging_item = null
 var drag_source_pos = null
-var drag_preview_control = null
+var drag_target_preview = null   # 目标位置预览框
 var drag_start_pos = null  # 记录开始拖拽的位置
 var is_dragging = false    # 是否正在拖拽
 
@@ -182,8 +182,20 @@ func _refresh_items():
 
 
 func _render_item(item_info):
-	var data = item_info.data
-	var grid_pos = item_info.grid_pos
+	if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
+		return
+	if not item_info.has("data"):
+		return
+
+	var data = item_info.get("data")
+	if data == null:
+		return
+
+	if not item_info.has("grid_pos"):
+		return
+	var grid_pos = item_info.get("grid_pos")
+	if grid_pos == null:
+		return
 
 	var slot_size = 46
 	var gap = 3
@@ -209,7 +221,7 @@ func _render_item(item_info):
 	# 内层图片
 	var item_control = TextureRect.new()
 	item_control.texture = data.icon
-	item_control.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	item_control.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	item_control.stretch_mode = TextureRect.STRETCH_SCALE
 	item_control.size = Vector2(w, h)
 	item_control.modulate = Color(1, 1, 1, 0.85)
@@ -253,57 +265,103 @@ func _input(event):
 			if move_dist >= 10:
 				is_dragging = true
 				_begin_drag_visual(dragging_item, event.global_position)
-		elif is_dragging and drag_preview_control:
+		elif is_dragging and drag_target_preview and dragging_item:
 			_update_drag_preview(event.global_position)
 
 
 func _get_item_at_position(global_pos: Vector2):
 	for child in item_layer.get_children():
+		# 跳过预览控件
+		if child == drag_target_preview:
+			continue
+		# 检查是否有有效的 meta
+		if not child.has_meta("item_info"):
+			continue
 		var rect = Rect2(child.global_position, child.size)
 		if rect.has_point(global_pos):
-			return child.get_meta("item_info")
+			var info = child.get_meta("item_info")
+			if info != null and typeof(info) == TYPE_DICTIONARY:
+				return info
 	return null
 
 
 func _begin_drag_visual(item_info, global_pos):
-	drag_source_pos = item_info.grid_pos
+	if item_info == null:
+		return
+
+	# 安全检查
+	if typeof(item_info) != TYPE_DICTIONARY:
+		return
+	if not item_info.has("data") or not item_info.has("grid_pos"):
+		return
+
+	var data = item_info.get("data")
+	if data == null:
+		return
+
+	drag_source_pos = item_info.get("grid_pos")
 
 	# 隐藏物品
 	for child in item_layer.get_children():
-		if child.get_meta("item_info") == item_info:
+		if child.has_meta("item_info") and child.get_meta("item_info") == item_info:
 			child.visible = false
 			break
 
-	# 创建拖拽预览
-	if drag_preview_control:
-		drag_preview_control.queue_free()
+	# 清理旧预览
+	if drag_target_preview:
+		drag_target_preview.queue_free()
+		drag_target_preview = null
 
-	var data = item_info.data
 	var slot_size = 46
 	var gap = 3
 	var w = data.grid_size.x * slot_size + (data.grid_size.x - 1) * gap
 	var h = data.grid_size.y * slot_size + (data.grid_size.y - 1) * gap
 
-	drag_preview_control = TextureRect.new()
-	drag_preview_control.texture = data.icon
-	drag_preview_control.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	drag_preview_control.stretch_mode = TextureRect.STRETCH_SCALE
-	drag_preview_control.size = Vector2(w, h)
-	drag_preview_control.modulate = Color(1, 1, 1, 0.9)
-	drag_preview_control.z_index = 100
+	# 创建目标位置预览框（显示在格子位置）
+	drag_target_preview = Control.new()
+	drag_target_preview.size = Vector2(w, h)
+	drag_target_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	drag_target_preview.z_index = 50
 
-	# 应用镜像
+	var bg = PanelContainer.new()
+	bg.size = Vector2(w, h)
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.2, 0.8, 0.2, 0.35)  # 默认绿色
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(4)
+	bg.add_theme_stylebox_override("panel", style)
+	drag_target_preview.add_child(bg)
+
+	# 目标预览框内的物品图标
+	var preview_icon = TextureRect.new()
+	preview_icon.texture = data.icon
+	preview_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview_icon.stretch_mode = TextureRect.STRETCH_SCALE
+	preview_icon.size = Vector2(w, h)
+	preview_icon.modulate = Color(1, 1, 1, 0.45)
+	preview_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if data.item_type == "武器" and data.direction == 1:
-		drag_preview_control.flip_h = true
+		preview_icon.flip_h = true
+	bg.add_child(preview_icon)
 
-	add_child(drag_preview_control)
+	item_layer.add_child(drag_target_preview)
 
 	_update_drag_preview(global_pos)
 
 
 func _flip_item_direction(item_info):
 	"""翻转物品方向"""
-	var data = item_info.data
+	if item_info == null:
+		return
+	if typeof(item_info) != TYPE_DICTIONARY:
+		return
+	if not item_info.has("data"):
+		return
+
+	var data = item_info.get("data")
+	if data == null:
+		return
+
 	if data.item_type == "武器":
 		# 翻转方向 0 <-> 1
 		data.direction = 1 - data.direction
@@ -312,9 +370,19 @@ func _flip_item_direction(item_info):
 
 func _cancel_drag():
 	"""取消拖拽"""
-	if drag_preview_control:
-		drag_preview_control.queue_free()
-		drag_preview_control = null
+	# 恢复物品可见性
+	if dragging_item and typeof(dragging_item) == TYPE_DICTIONARY:
+		for child in item_layer.get_children():
+			if not child.has_meta("item_info"):
+				continue
+			var meta = child.get_meta("item_info")
+			if meta != null and meta == dragging_item:
+				child.visible = true
+				break
+
+	if drag_target_preview:
+		drag_target_preview.queue_free()
+		drag_target_preview = null
 	dragging_item = null
 	drag_source_pos = null
 	drag_start_pos = null
@@ -322,8 +390,50 @@ func _cancel_drag():
 
 
 func _update_drag_preview(global_pos: Vector2):
-	if drag_preview_control:
-		drag_preview_control.global_position = global_pos - drag_preview_control.size / 2
+	# 更新目标位置预览框
+	if drag_target_preview == null or dragging_item == null:
+		return
+
+	# 安全检查 dragging_item 是否为有效字典
+	if typeof(dragging_item) != TYPE_DICTIONARY:
+		return
+	if not dragging_item.has("data"):
+		return
+
+	var item_data = dragging_item.get("data")
+	if item_data == null:
+		return
+
+	var local_pos = global_pos - item_layer.global_position
+	var grid_pos = _local_to_grid(local_pos)
+
+	var slot_size = 46
+	var gap = 3
+
+	# 计算目标位置像素坐标
+	var start_slot = grid_container.get_child(0)
+	var grid_origin = Vector2.ZERO
+	if start_slot:
+		grid_origin = start_slot.position
+
+	var x = grid_origin.x + grid_pos.x * (slot_size + gap)
+	var y = grid_origin.y + grid_pos.y * (slot_size + gap)
+
+	drag_target_preview.position = Vector2(x, y)
+
+	# 检查能否放置，更新颜色
+	var can_place = _can_place_item(grid_pos, item_data.grid_size, dragging_item)
+
+	var bg = drag_target_preview.get_child(0)
+	if bg:
+		var style = bg.get_theme_stylebox("panel") as StyleBoxFlat
+		if style:
+			if can_place:
+				style.bg_color = Color(0.2, 0.8, 0.2, 0.35)  # 绿色
+				style.border_color = Color(0.3, 0.9, 0.3, 0.8)
+			else:
+				style.bg_color = Color(0.8, 0.2, 0.2, 0.35)  # 红色
+				style.border_color = Color(0.9, 0.3, 0.3, 0.8)
 
 
 func _end_drag(global_pos):
@@ -331,15 +441,52 @@ func _end_drag(global_pos):
 		return
 
 	# 移除预览
-	if drag_preview_control:
-		drag_preview_control.queue_free()
-		drag_preview_control = null
+	if drag_target_preview:
+		drag_target_preview.queue_free()
+		drag_target_preview = null
+
+	# 安全检查
+	if typeof(dragging_item) != TYPE_DICTIONARY:
+		dragging_item = null
+		drag_source_pos = null
+		drag_start_pos = null
+		is_dragging = false
+		_refresh_items()
+		return
+
+	if not dragging_item.has("data") or not dragging_item.has("grid_pos"):
+		dragging_item = null
+		drag_source_pos = null
+		drag_start_pos = null
+		is_dragging = false
+		_refresh_items()
+		return
+
+	var item_data = dragging_item.get("data")
+	if item_data == null:
+		dragging_item = null
+		drag_source_pos = null
+		drag_start_pos = null
+		is_dragging = false
+		_refresh_items()
+		return
+
+	# 检查 drag_source_pos 是否有效
+	if drag_source_pos == null:
+		drag_source_pos = dragging_item.get("grid_pos")
+
+	# 如果仍然没有有效的 source_pos，取消操作
+	if drag_source_pos == null:
+		dragging_item = null
+		drag_source_pos = null
+		drag_start_pos = null
+		is_dragging = false
+		_refresh_items()
+		return
 
 	# 计算目标位置
 	var local_pos = global_pos - item_layer.global_position
 	var grid_pos = _local_to_grid(local_pos)
-
-	var item_data = dragging_item.data
 
 	# 清除原位置标记
 	for dy in range(item_data.grid_size.y):
@@ -475,10 +622,19 @@ func _check_tooltip():
 	for child in item_layer.get_children():
 		if not child.visible:
 			continue
+		# 跳过没有 item_info meta 的控件
+		if not child.has_meta("item_info"):
+			continue
 		var rect = Rect2(child.global_position, child.size)
 		if rect.has_point(mouse_pos):
 			var item_info = child.get_meta("item_info")
-			var data = item_info.data
+			if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
+				continue
+			if not item_info.has("data"):
+				continue
+			var data = item_info.get("data")
+			if data == null:
+				continue
 
 			tooltip_name.text = data.item_name
 			tooltip_type.text = data.item_type + " (%dx%d)" % [data.grid_size.x, data.grid_size.y]

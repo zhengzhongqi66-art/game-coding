@@ -76,7 +76,7 @@ func _setup_ui():
 	hp_label.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(hp_label)
 
-	original_position = unit_sprite.position
+	original_position = Vector2.ZERO
 
 
 func set_color(color: Color):
