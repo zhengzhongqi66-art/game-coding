@@ -1,5 +1,7 @@
 extends Control
 
+const UI_STYLES = preload("res://ui_styles.gd")
+
 ## 单位名称
 @export var unit_name: String = "角色"
 
@@ -45,6 +47,7 @@ func _setup_ui():
 	name_label.text = unit_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 14)
+	UI_STYLES.style_unit_name(name_label)
 	vbox.add_child(name_label)
 
 	var sprite_container = CenterContainer.new()
@@ -54,12 +57,14 @@ func _setup_ui():
 	unit_sprite = ColorRect.new()
 	unit_sprite.custom_minimum_size = Vector2(60, 80)
 	unit_sprite.color = Color(0.3, 0.5, 0.8)
+	UI_STYLES.style_unit_sprite(unit_sprite)
 	sprite_container.add_child(unit_sprite)
 
 	attack_indicator = Label.new()
 	attack_indicator.text = ""
 	attack_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	attack_indicator.add_theme_font_size_override("font_size", 20)
+	UI_STYLES.style_attack_indicator(attack_indicator)
 	attack_indicator.visible = false
 	sprite_container.add_child(attack_indicator)
 
@@ -68,12 +73,14 @@ func _setup_ui():
 	hp_bar.max_value = max_hp
 	hp_bar.value = max_hp
 	hp_bar.show_percentage = false
+	UI_STYLES.style_hp_bar(hp_bar)
 	vbox.add_child(hp_bar)
 
 	hp_label = Label.new()
 	hp_label.text = "%d / %d" % [current_hp, max_hp]
 	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hp_label.add_theme_font_size_override("font_size", 12)
+	UI_STYLES.style_hp_label(hp_label)
 	vbox.add_child(hp_label)
 
 	original_position = Vector2.ZERO
@@ -84,7 +91,7 @@ func set_color(color: Color):
 		unit_sprite.color = color
 
 
-func update_stats_from_inventory(items: Array):
+func update_stats_from_inventory(items: Array, enemy_direction: String = ""):
 	var bonus_hp = 0
 	var bonus_attack = 0
 	var bonus_defense = 0
@@ -94,8 +101,8 @@ func update_stats_from_inventory(items: Array):
 		if item == null:
 			continue
 
-		# 使用get_attack()来获取根据朝向计算的攻击力
-		bonus_attack += item.get_attack()
+		# 玩家传方向参数会计算朝向加成，怪物不传参数则全额攻击
+		bonus_attack += item.get_attack(enemy_direction)
 		bonus_defense += item.defense_bonus
 		bonus_hp += item.hp_bonus
 		bonus_speed += item.speed_bonus

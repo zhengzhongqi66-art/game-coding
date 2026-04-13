@@ -34,80 +34,100 @@ theme_override_font_sizes/font_size = 18
 text = "背包乱斗"
 horizontal_alignment = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="BagsHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LeftPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(320, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-
-[node name="BagLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "背包"
-
-[node name="InventoryContainer" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox"]
+[node name="PlayerPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/BagsHBox"]
 custom_minimum_size = Vector2(280, 220)
 layout_mode = 2
-size_flags_vertical = 3
 
-[node name="BtnHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox"]
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel"]
 layout_mode = 2
 
-[node name="AddWeaponBtn" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox/BtnHBox"]
-layout_mode = 2
-text = "武器"
-
-[node name="AddArmorBtn" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox/BtnHBox"]
-layout_mode = 2
-text = "防具"
-
-[node name="AddPotionBtn" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox/BtnHBox"]
-layout_mode = 2
-text = "药水"
-
-[node name="ClearBtn" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/LeftPanel/VBox/BtnHBox"]
-layout_mode = 2
-text = "清空"
-
-[node name="RightPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(400, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
-layout_mode = 2
-
-[node name="BattleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel/VBox"]
+[node name="PlayerLabel" type="Label" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "战斗"
+text = "玩家背包"
 horizontal_alignment = 1
 
-[node name="BattleContainer" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel/VBox"]
-custom_minimum_size = Vector2(380, 200)
+[node name="PlayerInventoryContainer" type="Control" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox"]
+custom_minimum_size = Vector2(260, 200)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BattleBtnHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel/VBox"]
+[node name="PlayerBtnHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox"]
 layout_mode = 2
 alignment = 1
 
-[node name="StartBtn" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel/VBox/BattleBtnHBox"]
+[node name="AddWeaponBtn" type="Button" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox/PlayerBtnHBox"]
+layout_mode = 2
+text = "武器"
+
+[node name="AddArmorBtn" type="Button" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox/PlayerBtnHBox"]
+layout_mode = 2
+text = "防具"
+
+[node name="AddPotionBtn" type="Button" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox/PlayerBtnHBox"]
+layout_mode = 2
+text = "药水"
+
+[node name="ClearBtn" type="Button" parent="MarginContainer/VBoxContainer/BagsHBox/PlayerPanel/VBox/PlayerBtnHBox"]
+layout_mode = 2
+text = "清空"
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/BagsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MonsterPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/BagsHBox"]
+custom_minimum_size = Vector2(280, 220)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/BagsHBox/MonsterPanel"]
+layout_mode = 2
+
+[node name="MonsterLabel" type="Label" parent="MarginContainer/VBoxContainer/BagsHBox/MonsterPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "怪物背包"
+horizontal_alignment = 1
+
+[node name="MonsterInventoryContainer" type="Control" parent="MarginContainer/VBoxContainer/BagsHBox/MonsterPanel/VBox"]
+custom_minimum_size = Vector2(260, 200)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BattleSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="BattleLabel" type="Label" parent="MarginContainer/VBoxContainer/BattleSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "战斗区域"
+horizontal_alignment = 1
+
+[node name="BattleContainer" type="Control" parent="MarginContainer/VBoxContainer/BattleSection"]
+custom_minimum_size = Vector2(400, 180)
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 3
+
+[node name="BattleBtnHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer/BattleSection"]
+layout_mode = 2
+alignment = 1
+
+[node name="StartBtn" type="Button" parent="MarginContainer/VBoxContainer/BattleSection/BattleBtnHBox"]
 layout_mode = 2
 text = "开始战斗"
 
-[node name="ResetBtn" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel/VBox/BattleBtnHBox"]
+[node name="ResetBtn" type="Button" parent="MarginContainer/VBoxContainer/BattleSection/BattleBtnHBox"]
 layout_mode = 2
 text = "重置"
 
 [node name="InfoLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "提示: 飞剑占3x2格,防具占2x2格. 剑向右攻击15,向左攻击8"
+text = "提示: 拖拽时Q/E旋转90°. 剑尖精确朝向怪物才全额攻击,其他方向半额"
 horizontal_alignment = 1

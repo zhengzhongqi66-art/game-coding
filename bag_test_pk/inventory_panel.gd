@@ -1,10 +1,17 @@
 extends PanelContainer
 
+const UI_STYLES = preload("res://ui_styles.gd")
+
 @export var columns: int = 5
 @export var rows: int = 4
+@export var enemy_direction: String = "right"  # 鎬墿鏂瑰悜: "right", "left", "up", "down"
+@export var show_weapon_direction: bool = true  # 鏄惁鏄剧ず姝﹀櫒鏂瑰悜淇℃伅
 
-var slots = []  # 格子数据
-var items = []  # 物品列表
+const SLOT_SIZE := 46
+const SLOT_GAP := 3
+
+var slots = []
+var items = []
 
 var grid_container: GridContainer
 var item_layer: Control
@@ -15,9 +22,10 @@ var tooltip_desc: Label
 
 var dragging_item = null
 var drag_source_pos = null
-var drag_target_preview = null   # 目标位置预览框
-var drag_start_pos = null  # 记录开始拖拽的位置
-var is_dragging = false    # 是否正在拖拽
+var drag_source_size: Vector2i = Vector2i.ZERO
+var drag_target_preview = null
+var drag_start_pos = null
+var is_dragging = false
 
 signal inventory_changed()
 
@@ -28,12 +36,7 @@ func _ready():
 
 
 func _setup_style():
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.18, 0.95)
-	style.border_color = Color(0.35, 0.35, 0.4)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	add_theme_stylebox_override("panel", style)
+	UI_STYLES.style_inventory_panel(self)
 
 
 func _setup_ui():
@@ -44,32 +47,22 @@ func _setup_ui():
 	margin.add_theme_constant_override("margin_bottom", 8)
 	add_child(margin)
 
-	var vbox = VBoxContainer.new()
-	margin.add_child(vbox)
-
-	var title = Label.new()
-	title.text = "背包"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(title)
-
 	var bag_container = Control.new()
-	bag_container.custom_minimum_size = Vector2(250, 200)
-	vbox.add_child(bag_container)
+	var bag_width = columns * SLOT_SIZE + (columns - 1) * SLOT_GAP + 16
+	var bag_height = rows * SLOT_SIZE + (rows - 1) * SLOT_GAP + 16
+	bag_container.custom_minimum_size = Vector2(bag_width, bag_height)
+	margin.add_child(bag_container)
 
-	# 格子层
 	grid_container = GridContainer.new()
 	grid_container.columns = columns
-	grid_container.add_theme_constant_override("h_separation", 3)
-	grid_container.add_theme_constant_override("v_separation", 3)
+	grid_container.add_theme_constant_override("h_separation", SLOT_GAP)
+	grid_container.add_theme_constant_override("v_separation", SLOT_GAP)
 	bag_container.add_child(grid_container)
 
 	for i in range(columns * rows):
 		slots.append(null)
-		var slot = _create_slot(i)
-		grid_container.add_child(slot)
+		grid_container.add_child(_create_slot(i))
 
-	# 物品层
 	item_layer = Control.new()
 	item_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bag_container.add_child(item_layer)
@@ -79,30 +72,17 @@ func _setup_ui():
 	add_child(tooltip)
 
 
-func _create_slot(index: int) -> PanelContainer:
+func _create_slot(_index: int) -> PanelContainer:
 	var slot = PanelContainer.new()
-	slot.custom_minimum_size = Vector2(46, 46)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.2, 0.2, 0.25, 0.8)
-	style.border_color = Color(0.4, 0.4, 0.45)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	slot.add_theme_stylebox_override("panel", style)
-
+	slot.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	UI_STYLES.style_inventory_slot(slot)
 	return slot
 
 
 func _create_tooltip() -> Control:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(100, 50)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.15, 0.5)
-	style.border_color = Color(0.6, 0.6, 0.7, 0.8)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	panel.add_theme_stylebox_override("panel", style)
+	UI_STYLES.style_tooltip(panel)
 
 	var margin = MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 5)
@@ -131,14 +111,92 @@ func _create_tooltip() -> Control:
 	return panel
 
 
-func _get_slot_position(index: int) -> Vector2i:
-	return Vector2i(index % columns, index / columns)
-
-
 func _get_index_from_pos(col: int, row: int) -> int:
 	if col < 0 or col >= columns or row < 0 or row >= rows:
 		return -1
 	return row * columns + col
+
+
+func _get_item_pixel_size(grid_size: Vector2i) -> Vector2:
+	return Vector2(
+		grid_size.x * SLOT_SIZE + (grid_size.x - 1) * SLOT_GAP,
+		grid_size.y * SLOT_SIZE + (grid_size.y - 1) * SLOT_GAP
+	)
+
+
+func _create_item_icon(data, container_size: Vector2, alpha: float) -> TextureRect:
+	var base_size = _get_item_pixel_size(data.base_grid_size)
+	var icon = TextureRect.new()
+	icon.texture = data.icon
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_SCALE
+	icon.size = base_size
+	icon.position = (container_size - base_size) * 0.5
+	icon.modulate = Color(1, 1, 1, alpha)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.pivot_offset = base_size * 0.5
+	icon.rotation_degrees = data.rotation
+	return icon
+
+
+func _create_preview_grid_layer(grid_size: Vector2i) -> Control:
+	var layer = Control.new()
+	layer.size = _get_item_pixel_size(grid_size)
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	for y in range(grid_size.y):
+		for x in range(grid_size.x):
+			var cell = PanelContainer.new()
+			cell.position = Vector2(x, y) * float(SLOT_SIZE + SLOT_GAP)
+			cell.size = Vector2(SLOT_SIZE, SLOT_SIZE)
+
+			var style = StyleBoxFlat.new()
+			style.bg_color = Color(0.2, 0.8, 0.2, 0.22)
+			style.border_color = Color(0.3, 0.9, 0.3, 0.8)
+			style.set_border_width_all(2)
+			style.set_corner_radius_all(4)
+			cell.add_theme_stylebox_override("panel", style)
+			layer.add_child(cell)
+
+	return layer
+
+
+func _set_preview_grid_state(preview: Control, can_place: bool):
+	if preview == null or preview.get_child_count() == 0:
+		return
+
+	var grid_layer = preview.get_child(0)
+	if grid_layer == null:
+		return
+
+	for cell in grid_layer.get_children():
+		var style = cell.get_theme_stylebox("panel") as StyleBoxFlat
+		if style == null:
+			continue
+		if can_place:
+			style.bg_color = Color(0.2, 0.8, 0.2, 0.22)
+			style.border_color = Color(0.3, 0.9, 0.3, 0.8)
+		else:
+			style.bg_color = Color(0.8, 0.2, 0.2, 0.22)
+			style.border_color = Color(0.9, 0.3, 0.3, 0.8)
+
+
+func _build_item_preview(data, alpha: float) -> Control:
+	var preview = Control.new()
+	var preview_size = _get_item_pixel_size(data.get_grid_size())
+	preview.size = preview_size
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var grid_layer = _create_preview_grid_layer(data.get_grid_size())
+	preview.add_child(grid_layer)
+
+	var icon_layer = Control.new()
+	icon_layer.size = preview_size
+	icon_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_layer.add_child(_create_item_icon(data, preview_size, alpha))
+	preview.add_child(icon_layer)
+
+	return preview
 
 
 func _can_place_item(grid_pos: Vector2i, grid_size: Vector2i, exclude_item = null) -> bool:
@@ -164,8 +222,8 @@ func _place_item(data, count: int, grid_pos: Vector2i):
 	}
 	items.append(item_info)
 
-	for dy in range(data.grid_size.y):
-		for dx in range(data.grid_size.x):
+	for dy in range(data.get_grid_size().y):
+		for dx in range(data.get_grid_size().x):
 			var idx = _get_index_from_pos(grid_pos.x + dx, grid_pos.y + dy)
 			if idx >= 0:
 				slots[idx] = item_info
@@ -184,61 +242,30 @@ func _refresh_items():
 func _render_item(item_info):
 	if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
 		return
-	if not item_info.has("data"):
+	if not item_info.has("data") or not item_info.has("grid_pos"):
 		return
 
 	var data = item_info.get("data")
-	if data == null:
-		return
-
-	if not item_info.has("grid_pos"):
-		return
 	var grid_pos = item_info.get("grid_pos")
-	if grid_pos == null:
+	if data == null or grid_pos == null:
 		return
-
-	var slot_size = 46
-	var gap = 3
 
 	var start_slot = grid_container.get_child(0)
 	if start_slot == null:
 		return
 
-	var grid_origin = start_slot.position
-
-	var x = grid_origin.x + grid_pos.x * (slot_size + gap)
-	var y = grid_origin.y + grid_pos.y * (slot_size + gap)
-	var w = data.grid_size.x * slot_size + (data.grid_size.x - 1) * gap
-	var h = data.grid_size.y * slot_size + (data.grid_size.y - 1) * gap
-
-	# 外层容器，保持位置和大小不变
 	var container = Control.new()
-	container.position = Vector2(x, y)
-	container.size = Vector2(w, h)
+	container.position = start_slot.position + Vector2(grid_pos.x, grid_pos.y) * float(SLOT_SIZE + SLOT_GAP)
+	container.size = _get_item_pixel_size(data.get_grid_size())
 	container.mouse_filter = Control.MOUSE_FILTER_STOP
 	container.set_meta("item_info", item_info)
-
-	# 内层图片
-	var item_control = TextureRect.new()
-	item_control.texture = data.icon
-	item_control.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	item_control.stretch_mode = TextureRect.STRETCH_SCALE
-	item_control.size = Vector2(w, h)
-	item_control.modulate = Color(1, 1, 1, 0.85)
-	item_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	# 武器方向镜像 - 只翻转图片，容器位置不变
-	if data.item_type == "武器" and data.direction == 1:
-		item_control.flip_h = true
-
-	container.add_child(item_control)
+	container.add_child(_create_item_icon(data, container.size, 0.85))
 	item_layer.add_child(container)
 
 
 func _input(event):
 	if event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			# 检查是否点击了物品
 			var item = _get_item_at_position(event.global_position)
 			if item:
 				dragging_item = item
@@ -246,21 +273,16 @@ func _input(event):
 				is_dragging = false
 		elif not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			if dragging_item:
-				# 判断是单击还是拖拽
 				var move_dist = event.global_position.distance_to(drag_start_pos)
 				if move_dist < 10 and not is_dragging:
-					# 单击 - 翻转方向
-					_flip_item_direction(dragging_item)
 					_cancel_drag()
 				else:
-					# 拖拽结束
 					_end_drag(event.global_position)
 			else:
 				_cancel_drag()
 
 	elif event is InputEventMouseMotion:
 		if dragging_item and not is_dragging:
-			# 检测是否开始拖拽
 			var move_dist = event.global_position.distance_to(drag_start_pos)
 			if move_dist >= 10:
 				is_dragging = true
@@ -268,17 +290,21 @@ func _input(event):
 		elif is_dragging and drag_target_preview and dragging_item:
 			_update_drag_preview(event.global_position)
 
+	elif event is InputEventKey and is_dragging:
+		if event.pressed:
+			if event.keycode == KEY_Q:
+				_rotate_item(false)
+			elif event.keycode == KEY_E:
+				_rotate_item(true)
+
 
 func _get_item_at_position(global_pos: Vector2):
 	for child in item_layer.get_children():
-		# 跳过预览控件
 		if child == drag_target_preview:
 			continue
-		# 检查是否有有效的 meta
 		if not child.has_meta("item_info"):
 			continue
-		var rect = Rect2(child.global_position, child.size)
-		if rect.has_point(global_pos):
+		if Rect2(child.global_position, child.size).has_point(global_pos):
 			var info = child.get_meta("item_info")
 			if info != null and typeof(info) == TYPE_DICTIONARY:
 				return info
@@ -286,11 +312,7 @@ func _get_item_at_position(global_pos: Vector2):
 
 
 func _begin_drag_visual(item_info, global_pos):
-	if item_info == null:
-		return
-
-	# 安全检查
-	if typeof(item_info) != TYPE_DICTIONARY:
+	if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
 		return
 	if not item_info.has("data") or not item_info.has("grid_pos"):
 		return
@@ -300,77 +322,61 @@ func _begin_drag_visual(item_info, global_pos):
 		return
 
 	drag_source_pos = item_info.get("grid_pos")
+	drag_source_size = data.get_grid_size()
 
-	# 隐藏物品
 	for child in item_layer.get_children():
 		if child.has_meta("item_info") and child.get_meta("item_info") == item_info:
 			child.visible = false
 			break
 
-	# 清理旧预览
 	if drag_target_preview:
 		drag_target_preview.queue_free()
-		drag_target_preview = null
 
-	var slot_size = 46
-	var gap = 3
-	var w = data.grid_size.x * slot_size + (data.grid_size.x - 1) * gap
-	var h = data.grid_size.y * slot_size + (data.grid_size.y - 1) * gap
-
-	# 创建目标位置预览框（显示在格子位置）
-	drag_target_preview = Control.new()
-	drag_target_preview.size = Vector2(w, h)
-	drag_target_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	drag_target_preview = _build_item_preview(data, 0.45)
 	drag_target_preview.z_index = 50
-
-	var bg = PanelContainer.new()
-	bg.size = Vector2(w, h)
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.2, 0.8, 0.2, 0.35)  # 默认绿色
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(4)
-	bg.add_theme_stylebox_override("panel", style)
-	drag_target_preview.add_child(bg)
-
-	# 目标预览框内的物品图标
-	var preview_icon = TextureRect.new()
-	preview_icon.texture = data.icon
-	preview_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview_icon.stretch_mode = TextureRect.STRETCH_SCALE
-	preview_icon.size = Vector2(w, h)
-	preview_icon.modulate = Color(1, 1, 1, 0.45)
-	preview_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if data.item_type == "武器" and data.direction == 1:
-		preview_icon.flip_h = true
-	bg.add_child(preview_icon)
-
 	item_layer.add_child(drag_target_preview)
-
 	_update_drag_preview(global_pos)
 
 
-func _flip_item_direction(item_info):
-	"""翻转物品方向"""
-	if item_info == null:
+func _rotate_item(clockwise: bool):
+	if dragging_item == null or typeof(dragging_item) != TYPE_DICTIONARY:
 		return
-	if typeof(item_info) != TYPE_DICTIONARY:
-		return
-	if not item_info.has("data"):
+	if not dragging_item.has("data"):
 		return
 
-	var data = item_info.get("data")
+	var data = dragging_item.get("data")
 	if data == null:
 		return
 
-	if data.item_type == "武器":
-		# 翻转方向 0 <-> 1
-		data.direction = 1 - data.direction
-		_refresh_items()
+	if clockwise:
+		data.rotation = (data.rotation + 90) % 360
+	else:
+		data.rotation = (data.rotation + 270) % 360
+
+	_recreate_drag_preview()
+
+
+func _recreate_drag_preview():
+	if dragging_item == null or typeof(dragging_item) != TYPE_DICTIONARY:
+		return
+	if not dragging_item.has("data"):
+		return
+
+	var data = dragging_item.get("data")
+	if data == null:
+		return
+
+	var mouse_pos = get_global_mouse_position()
+	if drag_target_preview:
+		drag_target_preview.queue_free()
+
+	drag_target_preview = _build_item_preview(data, 0.45)
+	drag_target_preview.z_index = 50
+	item_layer.add_child(drag_target_preview)
+	_update_drag_preview(mouse_pos)
 
 
 func _cancel_drag():
-	"""取消拖拽"""
-	# 恢复物品可见性
 	if dragging_item and typeof(dragging_item) == TYPE_DICTIONARY:
 		for child in item_layer.get_children():
 			if not child.has_meta("item_info"):
@@ -382,22 +388,19 @@ func _cancel_drag():
 
 	if drag_target_preview:
 		drag_target_preview.queue_free()
-		drag_target_preview = null
+
+	drag_target_preview = null
 	dragging_item = null
 	drag_source_pos = null
+	drag_source_size = Vector2i.ZERO
 	drag_start_pos = null
 	is_dragging = false
 
 
 func _update_drag_preview(global_pos: Vector2):
-	# 更新目标位置预览框
 	if drag_target_preview == null or dragging_item == null:
 		return
-
-	# 安全检查 dragging_item 是否为有效字典
-	if typeof(dragging_item) != TYPE_DICTIONARY:
-		return
-	if not dragging_item.has("data"):
+	if typeof(dragging_item) != TYPE_DICTIONARY or not dragging_item.has("data"):
 		return
 
 	var item_data = dragging_item.get("data")
@@ -405,140 +408,104 @@ func _update_drag_preview(global_pos: Vector2):
 		return
 
 	var local_pos = global_pos - item_layer.global_position
-	var grid_pos = _local_to_grid(local_pos)
-
-	var slot_size = 46
-	var gap = 3
-
-	# 计算目标位置像素坐标
+	var grid_pos = _get_drag_grid_pos(local_pos, item_data)
 	var start_slot = grid_container.get_child(0)
-	var grid_origin = Vector2.ZERO
-	if start_slot:
-		grid_origin = start_slot.position
+	var grid_origin = Vector2.ZERO if start_slot == null else start_slot.position
+	drag_target_preview.position = grid_origin + Vector2(grid_pos.x, grid_pos.y) * float(SLOT_SIZE + SLOT_GAP)
 
-	var x = grid_origin.x + grid_pos.x * (slot_size + gap)
-	var y = grid_origin.y + grid_pos.y * (slot_size + gap)
-
-	drag_target_preview.position = Vector2(x, y)
-
-	# 检查能否放置，更新颜色
-	var can_place = _can_place_item(grid_pos, item_data.grid_size, dragging_item)
-
-	var bg = drag_target_preview.get_child(0)
-	if bg:
-		var style = bg.get_theme_stylebox("panel") as StyleBoxFlat
-		if style:
-			if can_place:
-				style.bg_color = Color(0.2, 0.8, 0.2, 0.35)  # 绿色
-				style.border_color = Color(0.3, 0.9, 0.3, 0.8)
-			else:
-				style.bg_color = Color(0.8, 0.2, 0.2, 0.35)  # 红色
-				style.border_color = Color(0.9, 0.3, 0.3, 0.8)
+	var can_place = _can_place_item(grid_pos, item_data.get_grid_size(), dragging_item)
+	_set_preview_grid_state(drag_target_preview, can_place)
 
 
 func _end_drag(global_pos):
 	if dragging_item == null:
 		return
 
-	# 移除预览
 	if drag_target_preview:
 		drag_target_preview.queue_free()
 		drag_target_preview = null
 
-	# 安全检查
 	if typeof(dragging_item) != TYPE_DICTIONARY:
-		dragging_item = null
-		drag_source_pos = null
-		drag_start_pos = null
-		is_dragging = false
+		_reset_drag_state()
 		_refresh_items()
 		return
-
 	if not dragging_item.has("data") or not dragging_item.has("grid_pos"):
-		dragging_item = null
-		drag_source_pos = null
-		drag_start_pos = null
-		is_dragging = false
+		_reset_drag_state()
 		_refresh_items()
 		return
 
 	var item_data = dragging_item.get("data")
 	if item_data == null:
-		dragging_item = null
-		drag_source_pos = null
-		drag_start_pos = null
-		is_dragging = false
+		_reset_drag_state()
 		_refresh_items()
 		return
 
-	# 检查 drag_source_pos 是否有效
 	if drag_source_pos == null:
 		drag_source_pos = dragging_item.get("grid_pos")
-
-	# 如果仍然没有有效的 source_pos，取消操作
+		drag_source_size = item_data.get_grid_size()
 	if drag_source_pos == null:
-		dragging_item = null
-		drag_source_pos = null
-		drag_start_pos = null
-		is_dragging = false
+		_reset_drag_state()
 		_refresh_items()
 		return
 
-	# 计算目标位置
 	var local_pos = global_pos - item_layer.global_position
-	var grid_pos = _local_to_grid(local_pos)
+	var grid_pos = _get_drag_grid_pos(local_pos, item_data)
 
-	# 清除原位置标记
-	for dy in range(item_data.grid_size.y):
-		for dx in range(item_data.grid_size.x):
+	for dy in range(drag_source_size.y):
+		for dx in range(drag_source_size.x):
 			var idx = _get_index_from_pos(drag_source_pos.x + dx, drag_source_pos.y + dy)
 			if idx >= 0:
 				slots[idx] = null
 
-	# 检查能否放置
-	if grid_pos.x >= 0 and _can_place_item(grid_pos, item_data.grid_size):
-		dragging_item.grid_pos = grid_pos
+	if grid_pos.x >= 0 and _can_place_item(grid_pos, item_data.get_grid_size()):
+		dragging_item["grid_pos"] = grid_pos
 	else:
-		dragging_item.grid_pos = drag_source_pos
+		dragging_item["grid_pos"] = drag_source_pos
 
-	# 重新标记格子
-	for dy in range(item_data.grid_size.y):
-		for dx in range(item_data.grid_size.x):
-			var idx = _get_index_from_pos(dragging_item.grid_pos.x + dx, dragging_item.grid_pos.y + dy)
+	for dy in range(item_data.get_grid_size().y):
+		for dx in range(item_data.get_grid_size().x):
+			var idx = _get_index_from_pos(dragging_item["grid_pos"].x + dx, dragging_item["grid_pos"].y + dy)
 			if idx >= 0:
 				slots[idx] = dragging_item
 
 	_refresh_items()
-	dragging_item = null
-	drag_source_pos = null
-	drag_start_pos = null
-	is_dragging = false
+	_reset_drag_state()
 	inventory_changed.emit()
 
 
+func _reset_drag_state():
+	dragging_item = null
+	drag_source_pos = null
+	drag_source_size = Vector2i.ZERO
+	drag_start_pos = null
+	is_dragging = false
+
+
+func _get_drag_grid_pos(local_pos: Vector2, item_data) -> Vector2i:
+	var item_size = item_data.get_grid_size()
+	var item_pixel_size = _get_item_pixel_size(item_size)
+	var centered_pos = local_pos - item_pixel_size * 0.5
+	var col = int(round(centered_pos.x / float(SLOT_SIZE + SLOT_GAP)))
+	var row = int(round(centered_pos.y / float(SLOT_SIZE + SLOT_GAP)))
+
+	col = clamp(col, 0, columns - item_size.x)
+	row = clamp(row, 0, rows - item_size.y)
+	return Vector2i(col, row)
+
+
 func _local_to_grid(local_pos: Vector2) -> Vector2i:
-	var slot_size = 46
-	var gap = 3
+	var col = int(local_pos.x / float(SLOT_SIZE + SLOT_GAP))
+	var row = int(local_pos.y / float(SLOT_SIZE + SLOT_GAP))
 
-	var col = int(local_pos.x / (slot_size + gap))
-	var row = int(local_pos.y / (slot_size + gap))
-
-	if col < 0:
-		col = 0
-	if row < 0:
-		row = 0
-	if col >= columns:
-		col = columns - 1
-	if row >= rows:
-		row = rows - 1
-
+	col = clamp(col, 0, columns - 1)
+	row = clamp(row, 0, rows - 1)
 	return Vector2i(col, row)
 
 
 func add_item(data, count: int = 1) -> int:
 	var remaining = count
 
-	if data.grid_size == Vector2i(1, 1):
+	if data.get_grid_size() == Vector2i(1, 1):
 		for item in items:
 			if item.data.id == data.id and item.count < data.max_stack:
 				var can_add = data.max_stack - item.count
@@ -550,15 +517,21 @@ func add_item(data, count: int = 1) -> int:
 					inventory_changed.emit()
 					return 0
 
-	for row in range(rows):
-		for col in range(columns):
-			var grid_pos = Vector2i(col, row)
-			if _can_place_item(grid_pos, data.grid_size):
-				_place_item(data, 1, grid_pos)
-				remaining -= 1
-				if remaining <= 0:
-					inventory_changed.emit()
-					return 0
+	while remaining > 0:
+		var placed = false
+		for row in range(rows):
+			for col in range(columns):
+				var item_instance = data.duplicate(true)
+				var grid_pos = Vector2i(col, row)
+				if _can_place_item(grid_pos, item_instance.get_grid_size()):
+					_place_item(item_instance, 1, grid_pos)
+					remaining -= 1
+					placed = true
+					break
+			if placed:
+				break
+		if not placed:
+			break
 
 	inventory_changed.emit()
 	return remaining
@@ -566,8 +539,8 @@ func add_item(data, count: int = 1) -> int:
 
 func remove_item(item_id: String, count: int = 1) -> bool:
 	var remaining = count
-
 	var to_remove = []
+
 	for item in items:
 		if item.data.id == item_id:
 			var removed = min(remaining, item.count)
@@ -581,8 +554,8 @@ func remove_item(item_id: String, count: int = 1) -> bool:
 				break
 
 	for item in to_remove:
-		for dy in range(item.data.grid_size.y):
-			for dx in range(item.data.grid_size.x):
+		for dy in range(item.data.get_grid_size().y):
+			for dx in range(item.data.get_grid_size().x):
 				var idx = _get_index_from_pos(item.grid_pos.x + dx, item.grid_pos.y + dy)
 				if idx >= 0:
 					slots[idx] = null
@@ -618,38 +591,34 @@ func _check_tooltip():
 		return
 
 	var mouse_pos = get_global_mouse_position()
-
 	for child in item_layer.get_children():
-		if not child.visible:
+		if not child.visible or not child.has_meta("item_info"):
 			continue
-		# 跳过没有 item_info meta 的控件
-		if not child.has_meta("item_info"):
-			continue
-		var rect = Rect2(child.global_position, child.size)
-		if rect.has_point(mouse_pos):
+
+		if Rect2(child.global_position, child.size).has_point(mouse_pos):
 			var item_info = child.get_meta("item_info")
 			if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
 				continue
 			if not item_info.has("data"):
 				continue
+
 			var data = item_info.get("data")
 			if data == null:
 				continue
 
 			tooltip_name.text = data.item_name
-			tooltip_type.text = data.item_type + " (%dx%d)" % [data.grid_size.x, data.grid_size.y]
+			tooltip_type.text = data.item_type + " (%dx%d)" % [data.get_grid_size().x, data.get_grid_size().y]
 
 			var desc = data.description
-			if data.item_type == "武器":
-				desc += " | 攻击+%d" % data.get_attack()
-				desc += " →" if data.direction == 0 else " ←"
-			elif data.item_type == "防具":
-				if data.defense_bonus > 0:
-					desc += " | 防御+%d" % data.defense_bonus
-				if data.hp_bonus > 0:
-					desc += " 生命+%d" % data.hp_bonus
-			tooltip_desc.text = desc
+			if data.attack_bonus > 0:
+				var atk = data.get_attack(enemy_direction if show_weapon_direction else "")
+				desc += " | ATK+%d" % atk
+			if data.defense_bonus > 0:
+				desc += " | DEF+%d" % data.defense_bonus
+			if data.hp_bonus > 0:
+				desc += " | HP+%d" % data.hp_bonus
 
+			tooltip_desc.text = desc
 			tooltip.global_position = mouse_pos + Vector2(15, 15)
 			tooltip.visible = true
 			return

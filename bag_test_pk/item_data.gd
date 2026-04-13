@@ -15,7 +15,8 @@ extends Resource
 
 ## 占用格子尺寸
 @export_group("格子尺寸")
-@export var grid_size: Vector2i = Vector2i(1, 1)  # 宽x高
+@export var base_grid_size: Vector2i = Vector2i(1, 1)  # 基础尺寸（未旋转时）
+@export var rotation: int = 0  # 旋转角度 (0, 90, 180, 270)
 
 ## 战斗属性加成
 @export_group("战斗属性")
@@ -24,15 +25,38 @@ extends Resource
 @export var hp_bonus: int = 0
 @export var speed_bonus: float = 0.0
 
-## 武器朝向
-@export_group("武器朝向")
-@export_enum("right:0", "left:1") var direction: int = 0  # 0=向右, 1=向左
+## 获取当前格子尺寸（根据旋转）
+func get_grid_size() -> Vector2i:
+	if rotation == 90 or rotation == 270:
+		return Vector2i(base_grid_size.y, base_grid_size.x)
+	return base_grid_size
 
-## 获取当前攻击力（根据朝向）
-func get_attack() -> int:
-	if item_type == "武器":
-		if direction == 0:  # 向右
+## 剑尖是否朝向指定方向
+## direction: "right", "left", "up", "down"
+func is_facing_direction(direction: String) -> bool:
+	match direction:
+		"right": return rotation == 0
+		"down": return rotation == 90
+		"left": return rotation == 180
+		"up": return rotation == 270
+	return false
+
+## 获取剑尖朝向描述
+func get_facing_text() -> String:
+	match rotation:
+		0: return "→"
+		90: return "↓"
+		180: return "←"
+		270: return "↑"
+	return ""
+
+## 获取当前攻击力
+## enemy_direction: "right", "left", "up", "down"
+## 如果不传方向参数，则直接返回全额攻击（用于怪物装备）
+func get_attack(enemy_direction: String = "") -> int:
+	if item_type == "武器" and enemy_direction != "":
+		if is_facing_direction(enemy_direction):
 			return attack_bonus
-		else:  # 向左
-			return int(attack_bonus * 0.5)  # 向左伤害减半
+		else:
+			return int(attack_bonus * 0.5)  # 背向敌人伤害减半
 	return attack_bonus
