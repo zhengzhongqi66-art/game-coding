@@ -23,6 +23,7 @@ var tooltip_desc: Label
 var dragging_item = null
 var drag_source_pos = null
 var drag_source_size: Vector2i = Vector2i.ZERO
+var drag_source_rotation: int = 0
 var drag_target_preview = null
 var drag_start_pos = null
 var is_dragging = false
@@ -221,14 +222,30 @@ func _place_item(data, count: int, grid_pos: Vector2i):
 		"grid_pos": grid_pos
 	}
 	items.append(item_info)
-
-	for dy in range(data.get_grid_size().y):
-		for dx in range(data.get_grid_size().x):
-			var idx = _get_index_from_pos(grid_pos.x + dx, grid_pos.y + dy)
-			if idx >= 0:
-				slots[idx] = item_info
-
+	_rebuild_slots()
 	_refresh_items()
+
+
+func _rebuild_slots():
+	for i in range(slots.size()):
+		slots[i] = null
+
+	for item_info in items:
+		if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
+			continue
+		if not item_info.has("data") or not item_info.has("grid_pos"):
+			continue
+
+		var data = item_info.get("data")
+		var grid_pos = item_info.get("grid_pos")
+		if data == null or grid_pos == null:
+			continue
+
+		for dy in range(data.get_grid_size().y):
+			for dx in range(data.get_grid_size().x):
+				var idx = _get_index_from_pos(grid_pos.x + dx, grid_pos.y + dy)
+				if idx >= 0:
+					slots[idx] = item_info
 
 
 func _refresh_items():
@@ -323,6 +340,7 @@ func _begin_drag_visual(item_info, global_pos):
 
 	drag_source_pos = item_info.get("grid_pos")
 	drag_source_size = data.get_grid_size()
+	drag_source_rotation = data.rotation
 
 	for child in item_layer.get_children():
 		if child.has_meta("item_info") and child.get_meta("item_info") == item_info:
@@ -393,6 +411,7 @@ func _cancel_drag():
 	dragging_item = null
 	drag_source_pos = null
 	drag_source_size = Vector2i.ZERO
+	drag_source_rotation = 0
 	drag_start_pos = null
 	is_dragging = false
 
@@ -451,23 +470,13 @@ func _end_drag(global_pos):
 	var local_pos = global_pos - item_layer.global_position
 	var grid_pos = _get_drag_grid_pos(local_pos, item_data)
 
-	for dy in range(drag_source_size.y):
-		for dx in range(drag_source_size.x):
-			var idx = _get_index_from_pos(drag_source_pos.x + dx, drag_source_pos.y + dy)
-			if idx >= 0:
-				slots[idx] = null
-
-	if grid_pos.x >= 0 and _can_place_item(grid_pos, item_data.get_grid_size()):
+	if grid_pos.x >= 0 and _can_place_item(grid_pos, item_data.get_grid_size(), dragging_item):
 		dragging_item["grid_pos"] = grid_pos
 	else:
+		item_data.rotation = drag_source_rotation
 		dragging_item["grid_pos"] = drag_source_pos
 
-	for dy in range(item_data.get_grid_size().y):
-		for dx in range(item_data.get_grid_size().x):
-			var idx = _get_index_from_pos(dragging_item["grid_pos"].x + dx, dragging_item["grid_pos"].y + dy)
-			if idx >= 0:
-				slots[idx] = dragging_item
-
+	_rebuild_slots()
 	_refresh_items()
 	_reset_drag_state()
 	inventory_changed.emit()
@@ -477,6 +486,7 @@ func _reset_drag_state():
 	dragging_item = null
 	drag_source_pos = null
 	drag_source_size = Vector2i.ZERO
+	drag_source_rotation = 0
 	drag_start_pos = null
 	is_dragging = false
 
@@ -554,13 +564,9 @@ func remove_item(item_id: String, count: int = 1) -> bool:
 				break
 
 	for item in to_remove:
-		for dy in range(item.data.get_grid_size().y):
-			for dx in range(item.data.get_grid_size().x):
-				var idx = _get_index_from_pos(item.grid_pos.x + dx, item.grid_pos.y + dy)
-				if idx >= 0:
-					slots[idx] = null
 		items.erase(item)
 
+	_rebuild_slots()
 	_refresh_items()
 	inventory_changed.emit()
 	return remaining <= 0
