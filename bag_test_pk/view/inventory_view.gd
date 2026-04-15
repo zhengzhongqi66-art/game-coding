@@ -1,17 +1,19 @@
 extends PanelContainer
 
-const UI_STYLES = preload("res://ui_styles.gd")
+const UI_STYLES = preload("res://view/ui_styles.gd")
+const INVENTORY_MANAGER = preload("res://logic/inventory_manager.gd")
+const DRAG_HANDLER = preload("res://logic/drag_handler.gd")
+const DIRECTION_MANAGER = preload("res://logic/direction_manager.gd")
 
 @export var columns: int = 5
 @export var rows: int = 4
-@export var enemy_direction: String = "right"  # 鎬墿鏂瑰悜: "right", "left", "up", "down"
-@export var show_weapon_direction: bool = true  # 鏄惁鏄剧ず姝﹀櫒鏂瑰悜淇℃伅
+@export var show_weapon_direction: bool = true
+
+var inventory_manager: RefCounted
+var drag_handler: RefCounted
 
 const SLOT_SIZE := 46
 const SLOT_GAP := 3
-
-var slots = []
-var items = []
 
 var grid_container: GridContainer
 var item_layer: Control
@@ -20,20 +22,22 @@ var tooltip_name: Label
 var tooltip_type: Label
 var tooltip_desc: Label
 
-var dragging_item = null
-var drag_source_pos = null
-var drag_source_size: Vector2i = Vector2i.ZERO
-var drag_source_rotation: int = 0
 var drag_target_preview = null
-var drag_start_pos = null
-var is_dragging = false
 
 signal inventory_changed()
 
 
 func _ready():
+	_setup_managers()
 	_setup_style()
 	_setup_ui()
+
+
+func _setup_managers():
+	inventory_manager = INVENTORY_MANAGER.new(columns, rows)
+	drag_handler = DRAG_HANDLER.new()
+	drag_handler.drag_started.connect(_on_drag_started)
+	drag_handler.item_rotated.connect(_on_item_rotated)
 
 
 func _setup_style():
@@ -61,7 +65,6 @@ func _setup_ui():
 	bag_container.add_child(grid_container)
 
 	for i in range(columns * rows):
-		slots.append(null)
 		grid_container.add_child(_create_slot(i))
 
 	item_layer = Control.new()
@@ -110,12 +113,6 @@ func _create_tooltip() -> Control:
 	vbox.add_child(tooltip_desc)
 
 	return panel
-
-
-func _get_index_from_pos(col: int, row: int) -> int:
-	if col < 0 or col >= columns or row < 0 or row >= rows:
-		return -1
-	return row * columns + col
 
 
 func _get_item_pixel_size(grid_size: Vector2i) -> Vector2:
@@ -200,59 +197,12 @@ func _build_item_preview(data, alpha: float) -> Control:
 	return preview
 
 
-func _can_place_item(grid_pos: Vector2i, grid_size: Vector2i, exclude_item = null) -> bool:
-	for dy in range(grid_size.y):
-		for dx in range(grid_size.x):
-			var col = grid_pos.x + dx
-			var row = grid_pos.y + dy
-			if col >= columns or row >= rows:
-				return false
-			var idx = _get_index_from_pos(col, row)
-			if idx < 0:
-				return false
-			if slots[idx] != null and slots[idx] != exclude_item:
-				return false
-	return true
-
-
-func _place_item(data, count: int, grid_pos: Vector2i):
-	var item_info = {
-		"data": data,
-		"count": count,
-		"grid_pos": grid_pos
-	}
-	items.append(item_info)
-	_rebuild_slots()
-	_refresh_items()
-
-
-func _rebuild_slots():
-	for i in range(slots.size()):
-		slots[i] = null
-
-	for item_info in items:
-		if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
-			continue
-		if not item_info.has("data") or not item_info.has("grid_pos"):
-			continue
-
-		var data = item_info.get("data")
-		var grid_pos = item_info.get("grid_pos")
-		if data == null or grid_pos == null:
-			continue
-
-		for dy in range(data.get_grid_size().y):
-			for dx in range(data.get_grid_size().x):
-				var idx = _get_index_from_pos(grid_pos.x + dx, grid_pos.y + dy)
-				if idx >= 0:
-					slots[idx] = item_info
-
-
 func _refresh_items():
 	for child in item_layer.get_children():
-		child.queue_free()
+		if child != drag_target_preview:
+			child.queue_free()
 
-	for item in items:
+	for item in inventory_manager.items:
 		_render_item(item)
 
 
@@ -285,34 +235,24 @@ func _input(event):
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			var item = _get_item_at_position(event.global_position)
 			if item:
-				dragging_item = item
-				drag_start_pos = event.global_position
-				is_dragging = false
+				drag_handler.start_drag(item, event.global_position)
 		elif not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			if dragging_item:
-				var move_dist = event.global_position.distance_to(drag_start_pos)
-				if move_dist < 10 and not is_dragging:
-					_cancel_drag()
-				else:
-					_end_drag(event.global_position)
+			if drag_handler.is_currently_dragging():
+				_end_drag(event.global_position)
 			else:
-				_cancel_drag()
-
+				drag_handler.cancel_drag()
+				_hide_dragging_item(false)
 	elif event is InputEventMouseMotion:
-		if dragging_item and not is_dragging:
-			var move_dist = event.global_position.distance_to(drag_start_pos)
-			if move_dist >= 10:
-				is_dragging = true
-				_begin_drag_visual(dragging_item, event.global_position)
-		elif is_dragging and drag_target_preview and dragging_item:
+		if drag_handler.check_drag_threshold(event.global_position):
+			_begin_drag_visual(drag_handler.get_dragging_item(), event.global_position)
+		elif drag_handler.is_currently_dragging() and drag_target_preview:
 			_update_drag_preview(event.global_position)
-
-	elif event is InputEventKey and is_dragging:
+	elif event is InputEventKey and drag_handler.is_currently_dragging():
 		if event.pressed:
 			if event.keycode == KEY_Q:
-				_rotate_item(false)
+				drag_handler.rotate_item(false)
 			elif event.keycode == KEY_E:
-				_rotate_item(true)
+				drag_handler.rotate_item(true)
 
 
 func _get_item_at_position(global_pos: Vector2):
@@ -331,21 +271,14 @@ func _get_item_at_position(global_pos: Vector2):
 func _begin_drag_visual(item_info, global_pos):
 	if item_info == null or typeof(item_info) != TYPE_DICTIONARY:
 		return
-	if not item_info.has("data") or not item_info.has("grid_pos"):
+	if not item_info.has("data"):
 		return
 
 	var data = item_info.get("data")
 	if data == null:
 		return
 
-	drag_source_pos = item_info.get("grid_pos")
-	drag_source_size = data.get_grid_size()
-	drag_source_rotation = data.rotation
-
-	for child in item_layer.get_children():
-		if child.has_meta("item_info") and child.get_meta("item_info") == item_info:
-			child.visible = false
-			break
+	_hide_dragging_item(true)
 
 	if drag_target_preview:
 		drag_target_preview.queue_free()
@@ -356,142 +289,84 @@ func _begin_drag_visual(item_info, global_pos):
 	_update_drag_preview(global_pos)
 
 
-func _rotate_item(clockwise: bool):
-	if dragging_item == null or typeof(dragging_item) != TYPE_DICTIONARY:
-		return
-	if not dragging_item.has("data"):
-		return
-
-	var data = dragging_item.get("data")
-	if data == null:
+func _hide_dragging_item(hide: bool):
+	var item = drag_handler.get_dragging_item()
+	if item == null:
 		return
 
-	if clockwise:
-		data.rotation = (data.rotation + 90) % 360
-	else:
-		data.rotation = (data.rotation + 270) % 360
-
-	_recreate_drag_preview()
-
-
-func _recreate_drag_preview():
-	if dragging_item == null or typeof(dragging_item) != TYPE_DICTIONARY:
-		return
-	if not dragging_item.has("data"):
-		return
-
-	var data = dragging_item.get("data")
-	if data == null:
-		return
-
-	var mouse_pos = get_global_mouse_position()
-	if drag_target_preview:
-		drag_target_preview.queue_free()
-
-	drag_target_preview = _build_item_preview(data, 0.45)
-	drag_target_preview.z_index = 50
-	item_layer.add_child(drag_target_preview)
-	_update_drag_preview(mouse_pos)
-
-
-func _cancel_drag():
-	if dragging_item and typeof(dragging_item) == TYPE_DICTIONARY:
-		for child in item_layer.get_children():
-			if not child.has_meta("item_info"):
-				continue
-			var meta = child.get_meta("item_info")
-			if meta != null and meta == dragging_item:
-				child.visible = true
-				break
-
-	if drag_target_preview:
-		drag_target_preview.queue_free()
-
-	drag_target_preview = null
-	dragging_item = null
-	drag_source_pos = null
-	drag_source_size = Vector2i.ZERO
-	drag_source_rotation = 0
-	drag_start_pos = null
-	is_dragging = false
+	for child in item_layer.get_children():
+		if child.has_meta("item_info") and child.get_meta("item_info") == item:
+			child.visible = not hide
+			break
 
 
 func _update_drag_preview(global_pos: Vector2):
-	if drag_target_preview == null or dragging_item == null:
-		return
-	if typeof(dragging_item) != TYPE_DICTIONARY or not dragging_item.has("data"):
+	if drag_target_preview == null:
 		return
 
-	var item_data = dragging_item.get("data")
+	var item = drag_handler.get_dragging_item()
+	if item == null or typeof(item) != TYPE_DICTIONARY or not item.has("data"):
+		return
+
+	var item_data = item.get("data")
 	if item_data == null:
 		return
 
 	var local_pos = global_pos - item_layer.global_position
-	var grid_pos = _get_drag_grid_pos(local_pos, item_data)
+	var grid_pos = _pixel_to_grid(local_pos, item_data)
 	var start_slot = grid_container.get_child(0)
 	var grid_origin = Vector2.ZERO if start_slot == null else start_slot.position
 	drag_target_preview.position = grid_origin + Vector2(grid_pos.x, grid_pos.y) * float(SLOT_SIZE + SLOT_GAP)
 
-	var can_place = _can_place_item(grid_pos, item_data.get_grid_size(), dragging_item)
+	var can_place = inventory_manager.can_place_item(grid_pos, item_data.get_grid_size(), item)
 	_set_preview_grid_state(drag_target_preview, can_place)
 
 
-func _end_drag(global_pos):
-	if dragging_item == null:
-		return
-
+func _end_drag(global_pos: Vector2):
 	if drag_target_preview:
 		drag_target_preview.queue_free()
 		drag_target_preview = null
 
-	if typeof(dragging_item) != TYPE_DICTIONARY:
-		_reset_drag_state()
-		_refresh_items()
+	var item = drag_handler.get_dragging_item()
+	if item == null:
+		drag_handler.cancel_drag()
 		return
-	if not dragging_item.has("data") or not dragging_item.has("grid_pos"):
-		_reset_drag_state()
+
+	if typeof(item) != TYPE_DICTIONARY or not item.has("data"):
+		drag_handler.cancel_drag()
 		_refresh_items()
 		return
 
-	var item_data = dragging_item.get("data")
+	var item_data = item.get("data")
 	if item_data == null:
-		_reset_drag_state()
-		_refresh_items()
-		return
-
-	if drag_source_pos == null:
-		drag_source_pos = dragging_item.get("grid_pos")
-		drag_source_size = item_data.get_grid_size()
-	if drag_source_pos == null:
-		_reset_drag_state()
+		drag_handler.cancel_drag()
 		_refresh_items()
 		return
 
 	var local_pos = global_pos - item_layer.global_position
-	var grid_pos = _get_drag_grid_pos(local_pos, item_data)
+	var grid_pos = _pixel_to_grid(local_pos, item_data)
+	var old_pos = drag_handler.get_source_position()
 
-	if grid_pos.x >= 0 and _can_place_item(grid_pos, item_data.get_grid_size(), dragging_item):
-		dragging_item["grid_pos"] = grid_pos
+	inventory_manager.clear_item_slots(item)
+
+	if grid_pos.x >= 0 and inventory_manager.can_place_item(grid_pos, item_data.get_grid_size()):
+		item["grid_pos"] = grid_pos
 	else:
-		item_data.rotation = drag_source_rotation
-		dragging_item["grid_pos"] = drag_source_pos
+		item["grid_pos"] = old_pos
 
-	_rebuild_slots()
+	var grid_size = item_data.get_grid_size()
+	for dy in range(grid_size.y):
+		for dx in range(grid_size.x):
+			var idx = inventory_manager.get_index_from_pos(item["grid_pos"].x + dx, item["grid_pos"].y + dy)
+			if idx >= 0:
+				inventory_manager.slots[idx] = item
+
 	_refresh_items()
-	_reset_drag_state()
+	drag_handler.cancel_drag()
 	inventory_changed.emit()
 
 
-func _reset_drag_state():
-	dragging_item = null
-	drag_source_pos = null
-	drag_source_size = Vector2i.ZERO
-	drag_source_rotation = 0
-	drag_start_pos = null
-	is_dragging = false
-
-
-func _get_drag_grid_pos(local_pos: Vector2, item_data) -> Vector2i:
+func _pixel_to_grid(local_pos: Vector2, item_data) -> Vector2i:
 	var item_size = item_data.get_grid_size()
 	var item_pixel_size = _get_item_pixel_size(item_size)
 	var centered_pos = local_pos - item_pixel_size * 0.5
@@ -503,88 +378,46 @@ func _get_drag_grid_pos(local_pos: Vector2, item_data) -> Vector2i:
 	return Vector2i(col, row)
 
 
-func _local_to_grid(local_pos: Vector2) -> Vector2i:
-	var col = int(local_pos.x / float(SLOT_SIZE + SLOT_GAP))
-	var row = int(local_pos.y / float(SLOT_SIZE + SLOT_GAP))
+func _on_drag_started(_item_info):
+	pass
 
-	col = clamp(col, 0, columns - 1)
-	row = clamp(row, 0, rows - 1)
-	return Vector2i(col, row)
+
+func _on_item_rotated(_item_info, _clockwise: bool):
+	if drag_target_preview:
+		drag_target_preview.queue_free()
+		drag_target_preview = null
+
+	var item = drag_handler.get_dragging_item()
+	if item and item.has("data"):
+		drag_target_preview = _build_item_preview(item.get("data"), 0.45)
+		drag_target_preview.z_index = 50
+		item_layer.add_child(drag_target_preview)
+		_update_drag_preview(get_global_mouse_position())
+		inventory_changed.emit()
 
 
 func add_item(data, count: int = 1) -> int:
-	var remaining = count
-
-	if data.get_grid_size() == Vector2i(1, 1):
-		for item in items:
-			if item.data.id == data.id and item.count < data.max_stack:
-				var can_add = data.max_stack - item.count
-				var added = min(remaining, can_add)
-				item.count += added
-				remaining -= added
-				if remaining <= 0:
-					_refresh_items()
-					inventory_changed.emit()
-					return 0
-
-	while remaining > 0:
-		var placed = false
-		for row in range(rows):
-			for col in range(columns):
-				var item_instance = data.duplicate(true)
-				var grid_pos = Vector2i(col, row)
-				if _can_place_item(grid_pos, item_instance.get_grid_size()):
-					_place_item(item_instance, 1, grid_pos)
-					remaining -= 1
-					placed = true
-					break
-			if placed:
-				break
-		if not placed:
-			break
-
+	var remaining = inventory_manager.add_item(data, count)
+	_refresh_items()
 	inventory_changed.emit()
 	return remaining
 
 
 func remove_item(item_id: String, count: int = 1) -> bool:
-	var remaining = count
-	var to_remove = []
-
-	for item in items:
-		if item.data.id == item_id:
-			var removed = min(remaining, item.count)
-			item.count -= removed
-			remaining -= removed
-
-			if item.count <= 0:
-				to_remove.append(item)
-
-			if remaining <= 0:
-				break
-
-	for item in to_remove:
-		items.erase(item)
-
-	_rebuild_slots()
+	var result = inventory_manager.remove_item(item_id, count)
 	_refresh_items()
 	inventory_changed.emit()
-	return remaining <= 0
+	return result
 
 
 func clear_all():
-	items.clear()
-	for i in range(slots.size()):
-		slots[i] = null
+	inventory_manager.clear_all()
 	_refresh_items()
 	inventory_changed.emit()
 
 
 func get_all_items() -> Array:
-	var result = []
-	for item in items:
-		result.append(item.data)
-	return result
+	return inventory_manager.get_all_items()
 
 
 func _process(_delta):
@@ -592,7 +425,7 @@ func _process(_delta):
 
 
 func _check_tooltip():
-	if dragging_item:
+	if drag_handler.is_currently_dragging():
 		tooltip.visible = false
 		return
 
@@ -617,7 +450,7 @@ func _check_tooltip():
 
 			var desc = data.description
 			if data.attack_bonus > 0:
-				var atk = data.get_attack(enemy_direction if show_weapon_direction else "")
+				var atk = _calculate_display_attack(data)
 				desc += " | ATK+%d" % atk
 			if data.defense_bonus > 0:
 				desc += " | DEF+%d" % data.defense_bonus
@@ -630,3 +463,15 @@ func _check_tooltip():
 			return
 
 	tooltip.visible = false
+
+
+func _calculate_display_attack(data) -> int:
+	if not show_weapon_direction:
+		return data.attack_bonus
+
+	if data.item_type != "\u6b66\u5668":
+		return data.attack_bonus
+
+	if DIRECTION_MANAGER.is_weapon_effective(data.rotation):
+		return data.attack_bonus
+	return int(data.attack_bonus * 0.5)
