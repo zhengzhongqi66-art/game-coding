@@ -16,8 +16,8 @@ func reset_hp():
 	current_hp = max_hp
 
 
-func take_damage(damage: int, defense: int = 0) -> bool:
-	var actual_damage = max(1, damage - defense)
+func take_damage(damage: int) -> bool:
+	var actual_damage = max(1, damage)
 	current_hp -= actual_damage
 
 	if current_hp <= 0:

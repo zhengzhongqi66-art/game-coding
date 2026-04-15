@@ -1,13 +1,13 @@
-[gd_scene format=3 uid="uid://cylrc4eo5mdy4"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://dnat8e38vuc2m" path="res://debug_overlay.gd" id="1"]
+[ext_resource type="Script" path="res://debug_overlay.gd" id="1"]
 
-[node name="DebugOverlay" type="CanvasLayer" unique_id=1806254424]
-layer = 100
+[node name="DebugOverlay" type="CanvasLayer"]
 visible = false
+layer = 100
 script = ExtResource("1")
 
-[node name="Mask" type="ColorRect" parent="." unique_id=1411125910]
+[node name="Mask" type="ColorRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -15,9 +15,9 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.35)
 
-[node name="Panel" type="PanelContainer" parent="Mask" unique_id=1183027184]
+[node name="Panel" type="PanelContainer" parent="Mask"]
 custom_minimum_size = Vector2(980, 560)
-layout_mode = 0
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -29,139 +29,149 @@ offset_bottom = 280.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RootMargin" type="MarginContainer" parent="Mask/Panel" unique_id=21367202]
-layout_mode = 2
+[node name="RootMargin" type="MarginContainer" parent="Mask/Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 18
 
-[node name="RootVBox" type="VBoxContainer" parent="Mask/Panel/RootMargin" unique_id=497518954]
-layout_mode = 2
+[node name="RootVBox" type="VBoxContainer" parent="Mask/Panel/RootMargin"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/separation = 14
 
-[node name="TitleLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox" unique_id=1914726262]
+[node name="TitleLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Debug Overlay"
 horizontal_alignment = 1
 
-[node name="ContentHBox" type="HBoxContainer" parent="Mask/Panel/RootMargin/RootVBox" unique_id=604194824]
+[node name="ContentHBox" type="HBoxContainer" parent="Mask/Panel/RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 16
 
-[node name="LeftPanel" type="VBoxContainer" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox" unique_id=822041659]
+[node name="LeftPanel" type="VBoxContainer" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="PlayerSectionLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=497101844]
+[node name="PlayerSectionLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 text = "Player"
 
-[node name="PlayerCharacterOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=322938957]
+[node name="PlayerCharacterOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 
-[node name="ApplyPlayerCharacterBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=978095119]
+[node name="ApplyPlayerCharacterBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 text = "Apply Character"
 
-[node name="AddPlayerItemOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=66285462]
+[node name="AddPlayerItemOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 
-[node name="PlayerItemCountSpin" type="SpinBox" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=1435952467]
+[node name="PlayerItemCountSpin" type="SpinBox" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 min_value = 1.0
 max_value = 99.0
 value = 1.0
 
-[node name="AddPlayerItemBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=238154234]
+[node name="AddPlayerItemBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 text = "Add Player Item"
 
-[node name="ClearPlayerBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=1831272352]
+[node name="ClearPlayerBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 text = "Clear Player"
 
-[node name="PrintPlayerBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel" unique_id=1324819978]
+[node name="PrintPlayerBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/LeftPanel"]
 layout_mode = 2
 text = "Print Player"
 
-[node name="MiddlePanel" type="VBoxContainer" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox" unique_id=1789364445]
+[node name="MiddlePanel" type="VBoxContainer" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="EnemySectionLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=1242346555]
+[node name="EnemySectionLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 text = "Enemy"
 
-[node name="EnemyMonsterOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=2127040430]
+[node name="EnemyMonsterOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 
-[node name="ApplyEnemyMonsterBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=2100200213]
+[node name="ApplyEnemyMonsterBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 text = "Apply Monster"
 
-[node name="EnemyDirectionOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=205402297]
+[node name="EnemyDirectionOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 
-[node name="ApplyDirectionBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=891961281]
+[node name="ApplyDirectionBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 text = "Apply Direction"
 
-[node name="AddEnemyItemOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=643340192]
+[node name="AddEnemyItemOption" type="OptionButton" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 
-[node name="EnemyItemCountSpin" type="SpinBox" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=176999096]
+[node name="EnemyItemCountSpin" type="SpinBox" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 min_value = 1.0
 max_value = 99.0
 value = 1.0
 
-[node name="AddEnemyItemBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=1345567035]
+[node name="AddEnemyItemBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 text = "Add Enemy Item"
 
-[node name="ClearEnemyBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=374950863]
+[node name="ClearEnemyBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 text = "Clear Enemy"
 
-[node name="PrintEnemyBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel" unique_id=1537551962]
+[node name="PrintEnemyBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/MiddlePanel"]
 layout_mode = 2
 text = "Print Enemy"
 
-[node name="RightPanel" type="VBoxContainer" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox" unique_id=360181476]
+[node name="RightPanel" type="VBoxContainer" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="BattleSectionLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel" unique_id=84120470]
+[node name="BattleSectionLabel" type="Label" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel"]
 layout_mode = 2
 text = "Battle"
 
-[node name="StartBattleBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel" unique_id=2138074182]
+[node name="StartBattleBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel"]
 layout_mode = 2
 text = "Start Battle"
 
-[node name="ResetBattleBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel" unique_id=502668314]
+[node name="ResetBattleBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel"]
 layout_mode = 2
 text = "Reset Battle"
 
-[node name="ClearAllBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel" unique_id=1740257236]
+[node name="ClearAllBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel"]
 layout_mode = 2
 text = "Clear Both"
 
-[node name="RefreshStateBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel" unique_id=527681278]
+[node name="RefreshStateBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel"]
 layout_mode = 2
 text = "Refresh State"
 
-[node name="CloseBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel" unique_id=712593695]
+[node name="CloseBtn" type="Button" parent="Mask/Panel/RootMargin/RootVBox/ContentHBox/RightPanel"]
 layout_mode = 2
 text = "Close"
 
-[node name="LogBox" type="RichTextLabel" parent="Mask/Panel/RootMargin/RootVBox" unique_id=805142072]
+[node name="LogBox" type="RichTextLabel" parent="Mask/Panel/RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
+bbcode_enabled = false
 scroll_following = true
+fit_content = false

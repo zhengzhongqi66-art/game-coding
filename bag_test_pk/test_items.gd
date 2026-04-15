@@ -68,14 +68,14 @@ func create_all_items() -> Array:
 	result.append(slime_hit)
 
 	var wolf_claw = _create_item(ITEM_WOLF_CLAW, "\u722a\u51fb", "\u72fc\u5996\u7684\u5229\u722a\u653b\u51fb", TYPE_MONSTER_ATTACK, Vector2i(1, 1), 1)
-	wolf_claw.attack_bonus = 30
+	wolf_claw.attack_bonus = 25
 	wolf_claw.behavior_type = "weapon_attack"
 	wolf_claw.base_attack_speed = 0.9
 	wolf_claw.affects_by_bag_state = false
 	result.append(wolf_claw)
 
 	var golem_smash = _create_item(ITEM_GOLEM_SMASH, "\u91cd\u51fb", "\u77f3\u50cf\u7684\u6c89\u91cd\u6253\u51fb", TYPE_MONSTER_ATTACK, Vector2i(1, 1), 1)
-	golem_smash.attack_bonus = 40
+	golem_smash.attack_bonus = 30
 	golem_smash.behavior_type = "weapon_attack"
 	golem_smash.base_attack_speed = 1.5
 	golem_smash.affects_by_bag_state = false

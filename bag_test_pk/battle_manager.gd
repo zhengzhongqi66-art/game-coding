@@ -1,187 +1,236 @@
 extends Control
 
-const UI_STYLES = preload("res://ui_styles.gd")
+const BATTLE_RESOLVER = preload("res://logic/battle_resolver.gd")
+const ITEM_RUNTIME = preload("res://data/item_runtime.gd")
+const ITEM_STATE_CALCULATOR = preload("res://logic/item_state_calculator.gd")
 
-## 怪物方向配置（可被外部修改）
-var enemy_direction: String = "right"  # "right", "left", "up", "down"
+const LABEL_PLAYER = "\u73a9\u5bb6"
+const LABEL_MONSTER = "\u602a\u7269"
 
-## 战斗单位
+var battle_view
 var player_unit
 var enemy_unit
 
-## 战斗状态
 enum BattleState { PREPARING, FIGHTING, ENDED }
 var current_state: BattleState = BattleState.PREPARING
 
-## 攻击计时器
-var player_attack_timer: float = 0.0
-var enemy_attack_timer: float = 0.0
-
-## 战斗日志
+var current_player_data = null
+var current_monster_data = null
+var player_item_runtimes: Array = []
+var enemy_item_runtimes: Array = []
 var battle_log: Array[String] = []
 
-## 信号
+var battle_resolver: RefCounted
+var item_state_calculator: RefCounted
+
 signal battle_ended(winner: String)
 signal log_updated(message: String)
 
-# UI节点
-var log_container: VBoxContainer
-var battle_info: Label
-
 
 func _ready():
-	_setup_ui()
+	battle_resolver = BATTLE_RESOLVER.new()
+	item_state_calculator = ITEM_STATE_CALCULATOR.new()
+	_setup_view()
 
 
-func _setup_ui():
-	var center_wrap = CenterContainer.new()
-	center_wrap.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center_wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	add_child(center_wrap)
+func _setup_view():
+	var view_script = load("res://view/battle_view.gd")
+	battle_view = Control.new()
+	battle_view.set_script(view_script)
+	battle_view.set_anchors_preset(Control.PRESET_FULL_RECT)
+	battle_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	battle_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(battle_view)
 
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 30)
-	center_wrap.add_child(hbox)
-
-	var unit_script = load("res://battle_unit.gd")
-
-	# 左侧：玩家单位
-	var player_vbox = VBoxContainer.new()
-	player_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	player_vbox.custom_minimum_size = Vector2(180, 0)
-	hbox.add_child(player_vbox)
-
-	player_unit = Control.new()
-	player_unit.set_script(unit_script)
-	player_unit.unit_name = "修士"
-	player_vbox.add_child(player_unit)
-	player_unit.set_color(Color(0.2, 0.5, 0.8))
-
-	# 中间：VS和战斗日志
-	var center_container = VBoxContainer.new()
-	center_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	center_container.custom_minimum_size = Vector2(260, 0)
-	hbox.add_child(center_container)
-
-	var vs_label = Label.new()
-	vs_label.text = "VS"
-	vs_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vs_label.add_theme_font_size_override("font_size", 28)
-	vs_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
-	center_container.add_child(vs_label)
-
-	battle_info = Label.new()
-	battle_info.text = "准备战斗"
-	battle_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	battle_info.add_theme_font_size_override("font_size", 14)
-	UI_STYLES.style_battle_info(battle_info)
-	center_container.add_child(battle_info)
-
-	var log_panel = PanelContainer.new()
-	log_panel.custom_minimum_size = Vector2(180, 80)
-	center_container.add_child(log_panel)
-
-	var log_scroll = ScrollContainer.new()
-	log_panel.add_child(log_scroll)
-
-	log_container = VBoxContainer.new()
-	log_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	log_scroll.add_child(log_container)
-	UI_STYLES.style_battle_log(log_panel, log_scroll, log_container)
-
-	# 右侧：敌人单位
-	var enemy_vbox = VBoxContainer.new()
-	enemy_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	enemy_vbox.custom_minimum_size = Vector2(180, 0)
-	hbox.add_child(enemy_vbox)
-
-	enemy_unit = Control.new()
-	enemy_unit.set_script(unit_script)
-	enemy_unit.unit_name = "史莱姆"
-	enemy_vbox.add_child(enemy_unit)
-	enemy_unit.set_color(Color(0.3, 0.7, 0.3))
+	player_unit = battle_view.get_player_unit()
+	enemy_unit = battle_view.get_enemy_unit()
 
 
-func start_battle(player_items: Array, monster_items: Array = []):
+func _build_item_runtimes(items: Array, owner = null) -> Array:
+	var result = []
+	for item in items:
+		if item == null:
+			continue
+
+		var item_runtime = ITEM_RUNTIME.new(item)
+		item_runtime.owner = owner
+		item_state_calculator.recalc_item_runtime(item_runtime)
+		result.append(item_runtime)
+	return result
+
+
+func _sum_defense(items: Array) -> int:
+	var total = 0
+	for item in items:
+		if item != null:
+			total += item.defense_bonus
+	return total
+
+
+func _sum_hp(items: Array) -> int:
+	var total = 0
+	for item in items:
+		if item != null:
+			total += item.hp_bonus
+	return total
+
+
+func _has_attack_items(item_runtimes: Array) -> bool:
+	for item_runtime in item_runtimes:
+		if item_runtime == null or item_runtime.data == null:
+			continue
+		if item_runtime.current_behavior_type == "weapon_attack":
+			return true
+	return false
+
+
+func start_battle(player_data, player_items: Array, monster_data, monster_items: Array = []):
 	current_state = BattleState.FIGHTING
+	current_player_data = player_data
+	current_monster_data = monster_data
 
-	# 玩家装备根据敌人方向计算攻击力
-	# 怪物装备不需要方向判定，直接全额攻击
-	player_unit.update_stats_from_inventory(player_items, enemy_direction)
+	if player_data:
+		battle_view.set_player_display(player_data.character_name, player_data.display_color)
+	else:
+		battle_view.set_player_display(LABEL_PLAYER, Color(0.2, 0.5, 0.8))
 
-	# 更新怪物基础属性
-	enemy_unit.max_hp = 60
-	enemy_unit.current_hp = enemy_unit.max_hp
-	enemy_unit.base_attack = 5
-	enemy_unit.base_defense = 2
+	if monster_data:
+		battle_view.set_enemy_display(monster_data.monster_name, monster_data.display_color)
+	else:
+		battle_view.set_enemy_display(LABEL_MONSTER, Color(0.3, 0.7, 0.3))
 
-	# 怪物装备不传方向参数，全额攻击
-	if monster_items.size() > 0:
-		enemy_unit.update_stats_from_inventory(monster_items)
-
-	player_attack_timer = 0.0
-	enemy_attack_timer = 0.0
+	refresh_player_side(player_data, player_items)
+	refresh_enemy_side(monster_data, monster_items)
 
 	battle_log.clear()
-	for child in log_container.get_children():
-		child.queue_free()
+	battle_view.clear_logs()
 
-	_add_log("战斗开始！")
-	_add_log("玩家 HP=%d ATK=%d" % [player_unit.max_hp, player_unit.base_attack])
-	_add_log("怪物 HP=%d ATK=%d" % [enemy_unit.max_hp, enemy_unit.base_attack])
-	battle_info.text = "战斗中..."
+	_add_log("\u6218\u6597\u5f00\u59cb\uff01")
+	_add_log("%s HP=%d DEF=%d" % [battle_view.get_player_unit().unit_name, player_unit.max_hp, player_unit.base_defense])
+	_add_log("%s HP=%d DEF=%d" % [battle_view.get_enemy_unit().unit_name, enemy_unit.max_hp, enemy_unit.base_defense])
+
+	var player_can_attack = _has_attack_items(player_item_runtimes)
+	var enemy_can_attack = _has_attack_items(enemy_item_runtimes)
+
+	if not player_can_attack:
+		_add_log("\u73a9\u5bb6\u5f53\u524d\u6ca1\u6709\u53ef\u653b\u51fb\u6b66\u5668")
+
+	if not enemy_can_attack:
+		_add_log("\u602a\u7269\u5f53\u524d\u6ca1\u6709\u53ef\u653b\u51fb\u624b\u6bb5")
+
+	if not player_can_attack and not enemy_can_attack:
+		current_state = BattleState.ENDED
+		_add_log("\u53cc\u65b9\u90fd\u6ca1\u6709\u53ef\u653b\u51fb\u624b\u6bb5\uff0c\u6218\u6597\u65e0\u6cd5\u8fdb\u884c")
+		battle_view.set_battle_info("\u65e0\u6cd5\u6218\u6597")
+		return
+
+	battle_view.set_battle_info("\u6218\u6597\u4e2d...")
+
+
+func refresh_player_side(player_data, player_items: Array):
+	current_player_data = player_data
+	var player_base_hp = player_data.base_hp if player_data else 100
+	var player_base_defense = player_data.base_defense if player_data else 5
+
+	var old_max_hp = player_unit.max_hp
+	player_unit.max_hp = player_base_hp + _sum_hp(player_items)
+	player_unit.base_defense = player_base_defense + _sum_defense(player_items)
+
+	if player_unit.current_hp > player_unit.max_hp:
+		player_unit.current_hp = player_unit.max_hp
+	elif player_unit.current_hp == old_max_hp:
+		player_unit.current_hp = player_unit.max_hp
+
+	player_unit._update_hp_display()
+	player_item_runtimes = _build_item_runtimes(player_items, player_data)
+
+
+func refresh_enemy_side(monster_data, monster_items: Array):
+	current_monster_data = monster_data
+	var monster_base_hp = monster_data.base_hp if monster_data else 60
+	var monster_base_defense = monster_data.base_defense if monster_data else 2
+
+	var old_max_hp = enemy_unit.max_hp
+	enemy_unit.max_hp = monster_base_hp + _sum_hp(monster_items)
+	enemy_unit.base_defense = monster_base_defense + _sum_defense(monster_items)
+
+	if enemy_unit.current_hp > enemy_unit.max_hp:
+		enemy_unit.current_hp = enemy_unit.max_hp
+	elif enemy_unit.current_hp == old_max_hp:
+		enemy_unit.current_hp = enemy_unit.max_hp
+
+	enemy_unit._update_hp_display()
+	enemy_item_runtimes = _build_item_runtimes(monster_items, monster_data)
 
 
 func _process(delta):
 	if current_state != BattleState.FIGHTING:
 		return
 
-	player_attack_timer += delta
-	if player_attack_timer >= player_unit.attack_speed:
-		player_attack_timer = 0.0
-		_perform_attack(player_unit, enemy_unit, "玩家")
+	for item_runtime in player_item_runtimes:
+		if item_runtime.current_behavior_type != "weapon_attack":
+			continue
 
-	enemy_attack_timer += delta
-	if enemy_attack_timer >= enemy_unit.attack_speed:
-		enemy_attack_timer = 0.0
-		_perform_attack(enemy_unit, player_unit, "怪物")
+		item_runtime.cooldown_timer += delta
+		if item_runtime.cooldown_timer >= item_runtime.current_attack_speed:
+			item_runtime.cooldown_timer = 0.0
+			_perform_item_attack(item_runtime, enemy_unit, battle_view.get_player_unit().unit_name)
+
+			if current_state != BattleState.FIGHTING:
+				return
+
+	for item_runtime in enemy_item_runtimes:
+		if item_runtime.current_behavior_type != "weapon_attack":
+			continue
+
+		item_runtime.cooldown_timer += delta
+		if item_runtime.cooldown_timer >= item_runtime.current_attack_speed:
+			item_runtime.cooldown_timer = 0.0
+			_perform_item_attack(item_runtime, player_unit, battle_view.get_enemy_unit().unit_name)
+
+			if current_state != BattleState.FIGHTING:
+				return
 
 
-func _perform_attack(attacker, defender, attacker_name: String):
-	attacker.show_attack_effect()
+func _perform_item_attack(item_runtime, defender, attacker_name: String):
+	if item_runtime == null or item_runtime.data == null:
+		return
 
-	var damage = attacker.base_attack + randi() % 5
+	if defender == enemy_unit:
+		player_unit.show_attack_effect()
+	else:
+		enemy_unit.show_attack_effect()
+
+	var damage = battle_resolver.calculate_damage(item_runtime.current_attack, defender.base_defense)
 	var died = defender.take_damage(damage)
 
-	_add_log("%s 攻击 %d伤害" % [attacker_name, damage])
+	_add_log("%s[%s] \u653b\u51fb %d\u4f24\u5bb3" % [attacker_name, item_runtime.data.item_name, damage])
 
 	if died:
 		current_state = BattleState.ENDED
-		var winner = "玩家" if defender == enemy_unit else "怪物"
-		_add_log("%s 获胜！" % winner)
-		battle_info.text = "%s 获胜！" % winner
+		var winner = attacker_name
+		_add_log("%s \u83b7\u80dc\uff01" % winner)
+		battle_view.set_battle_info("%s \u83b7\u80dc\uff01" % winner)
 		battle_ended.emit(winner)
 
 
 func _add_log(message: String):
 	battle_log.append(message)
 	log_updated.emit(message)
-
-	var label = Label.new()
-	label.text = message
-	label.add_theme_font_size_override("font_size", 10)
-	UI_STYLES.style_battle_log_label(label)
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	log_container.add_child(label)
+	battle_view.add_log(message)
 
 
 func reset():
 	current_state = BattleState.PREPARING
+	current_player_data = null
+	current_monster_data = null
+	player_item_runtimes.clear()
+	enemy_item_runtimes.clear()
 	player_unit.reset()
 	enemy_unit.reset()
-	battle_info.text = "准备战斗"
+	battle_view.set_player_display(LABEL_PLAYER, Color(0.2, 0.5, 0.8))
+	battle_view.set_enemy_display(LABEL_MONSTER, Color(0.3, 0.7, 0.3))
+	battle_view.set_battle_info("\u51c6\u5907\u6218\u6597")
 
 	battle_log.clear()
-	for child in log_container.get_children():
-		child.queue_free()
+	battle_view.clear_logs()
